@@ -4,7 +4,7 @@ import { JALVirtualAPI } from '@/lib/api';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { pilotId, apiKey } = body;
+    const { pilotId, apiKey, externalApiUrl } = body;
 
     // Validate input
     if (!pilotId || !apiKey) {
@@ -17,8 +17,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Initialize JAL Virtual API client
-    const jalAPI = new JALVirtualAPI(apiKey);
+    // Initialize JAL Virtual API client with optional custom URL
+    const jalAPI = new JALVirtualAPI(apiKey, externalApiUrl);
     
     // Attempt authentication
     const authResponse = await jalAPI.authenticate();
@@ -40,7 +40,8 @@ export async function POST(request: NextRequest) {
         success: true,
         user: authResponse.user,
         token: authResponse.token,
-        message: `Welcome back, ${authResponse.user.name}!`
+        message: `Welcome back, ${authResponse.user.name}!`,
+        externalApiUrl: externalApiUrl || 'https://jalvirtual.com/api/user'
       });
     } else {
       // Return authentication failure
@@ -70,7 +71,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { 
           success: false, 
-          message: 'Unable to connect to JAL Virtual servers. Please check your internet connection or VPN settings.' 
+          message: 'Unable to connect to external API servers. Please check your internet connection or API URL.' 
         },
         { status: 503 }
       );

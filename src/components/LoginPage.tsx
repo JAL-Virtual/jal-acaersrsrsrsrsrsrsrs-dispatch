@@ -7,15 +7,18 @@ import { Plane, Lock, User } from 'lucide-react';
 export default function LoginPage() {
   const [pilotId, setPilotId] = useState('');
   const [apiKey, setApiKey] = useState('');
+  const [customApiUrl, setCustomApiUrl] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<'checking' | 'online' | 'offline'>('checking');
+  const [showAdvanced, setShowAdvanced] = useState(false);
   const { login } = useAuth();
 
   // Check connection status on component mount
   useEffect(() => {
     const checkConnection = async () => {
       try {
-        await fetch('https://jalvirtual.com/api/user', {
+        const apiUrl = customApiUrl || 'https://jalvirtual.com/api/user';
+        await fetch(apiUrl, {
           method: 'HEAD',
           mode: 'no-cors',
           cache: 'no-cache'
@@ -27,14 +30,14 @@ export default function LoginPage() {
     };
 
     checkConnection();
-  }, []);
+  }, [customApiUrl]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!pilotId.trim() || !apiKey.trim()) return;
 
     setIsLoading(true);
-    await login(pilotId, apiKey);
+    await login(pilotId, apiKey, customApiUrl);
     setIsLoading(false);
   };
 
@@ -92,6 +95,39 @@ export default function LoginPage() {
                 />
               </div>
             </div>
+
+            {/* Advanced Settings Toggle */}
+            <div className="flex items-center justify-between">
+              <button
+                type="button"
+                onClick={() => setShowAdvanced(!showAdvanced)}
+                className="text-sm text-gray-400 hover:text-gray-300 transition-colors"
+              >
+                {showAdvanced ? 'Hide' : 'Show'} Advanced Settings
+              </button>
+            </div>
+
+            {/* Advanced Settings */}
+            {showAdvanced && (
+              <div className="space-y-4 p-4 bg-gray-700 rounded-md border border-gray-600">
+                <div>
+                  <label htmlFor="customApiUrl" className="block text-sm font-medium text-gray-300 mb-2">
+                    Custom API URL (Optional)
+                  </label>
+                  <input
+                    id="customApiUrl"
+                    type="url"
+                    value={customApiUrl}
+                    onChange={(e) => setCustomApiUrl(e.target.value)}
+                    placeholder="https://your-api.com/user"
+                    className="block w-full px-3 py-2 border border-gray-600 rounded-md bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent text-sm"
+                  />
+                  <p className="text-xs text-gray-400 mt-1">
+                    Leave empty to use default JAL Virtual API
+                  </p>
+                </div>
+              </div>
+            )}
 
             <button
               type="submit"

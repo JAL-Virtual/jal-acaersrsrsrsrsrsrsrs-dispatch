@@ -8,7 +8,7 @@ interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (pilotId: string, apiKey: string) => Promise<boolean>;
+  login: (pilotId: string, apiKey: string, externalApiUrl?: string) => Promise<boolean>;
   logout: () => void;
   updateUser: (userData: Partial<User>) => void;
 }

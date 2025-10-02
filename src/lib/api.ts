@@ -34,20 +34,24 @@ const retryRequest = async <T>(requestFn: () => Promise<T>, attempts: number = R
 // JAL Virtual API Client
 export class JALVirtualAPI {
   private apiKey: string;
+  private baseUrl: string;
 
-  constructor(apiKey: string) {
+  constructor(apiKey: string, customBaseUrl?: string) {
     this.apiKey = apiKey;
+    this.baseUrl = customBaseUrl || API_BASE_URL;
   }
 
   async authenticate(): Promise<AuthResponse> {
     try {
       // Use the API key as Authorization header for JAL Virtual API
       const response = await retryRequest(() => 
-        axios.get(API_BASE_URL, {
+        axios.get(this.baseUrl, {
           ...axiosConfig,
           headers: {
             ...axiosConfig.headers,
             'Authorization': `Bearer ${this.apiKey}`,
+            // Alternative header formats that some APIs might use
+            'X-API-Key': this.apiKey,
           }
         })
       );
@@ -108,11 +112,12 @@ export class JALVirtualAPI {
 
   async getUserInfo(token: string): Promise<User | null> {
     try {
-      const response = await axios.get(API_BASE_URL, {
+      const response = await axios.get(this.baseUrl, {
         ...axiosConfig,
         headers: { 
           ...axiosConfig.headers,
           'Authorization': `Bearer ${token}`,
+          'X-API-Key': token,
         }
       });
       
