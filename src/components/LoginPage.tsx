@@ -47,7 +47,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-red-900/20 to-gray-900 relative overflow-hidden">
+    <div className="h-screen bg-gradient-to-br from-gray-900 via-red-900/20 to-gray-900 relative overflow-hidden">
       {/* Enhanced Animated Background */}
       <div className="absolute inset-0 overflow-hidden">
         {/* Primary gradient orbs */}
@@ -81,26 +81,26 @@ export default function LoginPage() {
       {/* Grid Pattern Overlay */}
       <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:50px_50px]"></div>
 
-      <div className="relative z-10 min-h-screen flex items-center justify-center p-4">
+      <div className="relative z-10 h-screen flex items-center justify-center p-4">
         <div className="w-full max-w-md">
           {/* Enhanced Header */}
-          <div className="text-center mb-10 animate-fade-in">
-            <div className="flex items-center justify-center mb-8">
+          <div className="text-center mb-8 animate-fade-in">
+            <div className="flex items-center justify-center mb-6">
               <div className="relative group">
                 {/* Enhanced glow effects */}
                 <div className="absolute inset-0 bg-gradient-to-r from-red-500/40 to-red-600/30 rounded-3xl blur-2xl animate-pulse group-hover:blur-3xl transition-all duration-500"></div>
                 <div className="absolute inset-0 bg-gradient-to-r from-blue-500/20 to-purple-500/20 rounded-3xl blur-xl animate-pulse delay-300"></div>
                 
                 {/* Main logo container */}
-                <div className="relative bg-white/10 backdrop-blur-xl p-8 rounded-3xl shadow-2xl border border-white/20 group-hover:border-white/30 transition-all duration-500 group-hover:scale-105">
+                <div className="relative bg-white/10 backdrop-blur-xl p-6 rounded-2xl shadow-2xl border border-white/20 group-hover:border-white/30 transition-all duration-500 group-hover:scale-105">
                   {/* JAL Logo */}
                   <Image 
                     src="/img/jal-logo.png" 
                     alt="JAL Logo" 
-                    width={140}
-                    height={75}
-                    className="h-20 w-auto animate-float object-contain filter drop-shadow-lg"
-                    style={{ maxWidth: '140px', maxHeight: '75px' }}
+                    width={120}
+                    height={65}
+                    className="h-16 w-auto animate-float object-contain filter drop-shadow-lg"
+                    style={{ maxWidth: '120px', maxHeight: '65px' }}
                     onLoad={() => console.log('✅ JAL logo loaded successfully')}
                     onError={() => console.log('❌ JAL logo failed to load')}
                   />
@@ -109,10 +109,10 @@ export default function LoginPage() {
             </div>
             
             {/* Enhanced title */}
-            <h1 className="text-5xl font-bold text-white mb-4 bg-gradient-to-r from-white via-red-100 to-white bg-clip-text text-transparent drop-shadow-lg">
+            <h1 className="text-4xl font-bold text-white mb-4 bg-gradient-to-r from-white via-red-100 to-white bg-clip-text text-transparent drop-shadow-lg">
               ACARS Dispatch
             </h1>
-            <p className="text-gray-300 text-xl font-medium mb-6 leading-relaxed">
+            <p className="text-gray-300 text-base font-medium mb-5 leading-relaxed">
               Aircraft Communications Addressing and Reporting System
             </p>
             
@@ -125,14 +125,14 @@ export default function LoginPage() {
           </div>
 
           {/* Enhanced Login Form */}
-          <div className="bg-white/10 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/20 p-10 animate-slide-up relative overflow-hidden">
+          <div className="bg-white/10 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/20 p-8 animate-slide-up relative overflow-hidden">
             {/* Form background glow */}
             <div className="absolute inset-0 bg-gradient-to-br from-red-500/5 to-blue-500/5 rounded-3xl"></div>
             
-            <form onSubmit={handleSubmit} className="space-y-8 relative z-10">
+            <form onSubmit={handleSubmit} className="space-y-6 relative z-10">
               {/* Enhanced API Key Input */}
               <div className="space-y-3">
-                <label htmlFor="apiKey" className="block text-sm font-bold text-white/95 mb-4 flex items-center">
+                <label htmlFor="apiKey" className="block text-sm font-bold text-white/95 mb-3 flex items-center">
                   <div className="p-2 bg-red-500/20 rounded-lg mr-3">
                     <Lock className="h-4 w-4 text-red-400" />
                   </div>
@@ -143,8 +143,8 @@ export default function LoginPage() {
                   <div className="absolute inset-0 bg-gradient-to-r from-red-500/20 to-blue-500/20 rounded-2xl blur-sm opacity-0 group-focus-within:opacity-100 transition-opacity duration-300"></div>
                   
                   <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
-                      <Lock className="h-5 w-5 text-gray-400 group-focus-within:text-red-400 transition-colors duration-300" />
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <Lock className="h-4 w-4 text-gray-400 group-focus-within:text-red-400 transition-colors duration-300" />
                     </div>
                     <input
                       id="apiKey"
@@ -152,15 +152,15 @@ export default function LoginPage() {
                       value={apiKey}
                       onChange={(e) => setApiKey(e.target.value)}
                       placeholder="Enter your pilot API key"
-                      className="block w-full pl-14 pr-14 py-5 border border-white/20 rounded-2xl bg-white/10 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500/50 focus:border-red-500/50 transition-all duration-300 backdrop-blur-sm text-lg"
+                      className="block w-full pl-12 pr-12 py-4 border border-white/20 rounded-xl bg-white/10 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500/50 focus:border-red-500/50 transition-all duration-300 backdrop-blur-sm text-base"
                       required
                     />
                     <button
                       type="button"
                       onClick={() => setShowApiKey(!showApiKey)}
-                      className="absolute inset-y-0 right-0 pr-5 flex items-center text-gray-400 hover:text-white transition-colors duration-300"
+                      className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-white transition-colors duration-300"
                     >
-                      {showApiKey ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                      {showApiKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
                   </div>
                 </div>
@@ -170,7 +170,7 @@ export default function LoginPage() {
               <button
                 type="submit"
                 disabled={isLoading || !apiKey.trim()}
-                className="w-full flex justify-center items-center py-6 px-8 border border-transparent rounded-2xl shadow-2xl text-lg font-bold text-white bg-gradient-to-r from-red-600 via-red-700 to-red-800 hover:from-red-700 hover:via-red-800 hover:to-red-900 focus:outline-none focus:ring-4 focus:ring-red-500/50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] backdrop-blur-sm relative overflow-hidden group"
+                className="w-full flex justify-center items-center py-4 px-6 border border-transparent rounded-xl shadow-2xl text-base font-bold text-white bg-gradient-to-r from-red-600 via-red-700 to-red-800 hover:from-red-700 hover:via-red-800 hover:to-red-900 focus:outline-none focus:ring-4 focus:ring-red-500/50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] backdrop-blur-sm relative overflow-hidden group"
               >
                 {/* Button glow effect */}
                 <div className="absolute inset-0 bg-gradient-to-r from-red-400/20 to-red-600/20 rounded-2xl blur-sm opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
@@ -178,13 +178,13 @@ export default function LoginPage() {
                 <div className="relative flex items-center">
                   {isLoading ? (
                     <>
-                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white mr-4"></div>
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3"></div>
                       <span>Authenticating...</span>
                     </>
                   ) : (
                     <>
-                      <div className="p-2 bg-white/20 rounded-lg mr-4">
-                        <User className="h-6 w-6" />
+                      <div className="p-2 bg-white/20 rounded-lg mr-3">
+                        <User className="h-5 w-5" />
                       </div>
                       <span>Sign In to ACARS</span>
                     </>
@@ -194,12 +194,12 @@ export default function LoginPage() {
             </form>
 
             {/* Enhanced Connection Status */}
-            <div className="mt-10 p-6 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-sm relative overflow-hidden">
+            <div className="mt-6 p-5 rounded-xl bg-white/5 border border-white/10 backdrop-blur-sm relative overflow-hidden">
               {/* Status background glow */}
               <div className="absolute inset-0 bg-gradient-to-r from-green-500/5 to-blue-500/5 rounded-2xl"></div>
               
               <div className="relative z-10">
-                <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center justify-between mb-3">
                   <span className="text-sm font-bold text-white/95 flex items-center">
                     <div className="p-2 bg-blue-500/20 rounded-lg mr-3">
                       <Wifi className="h-4 w-4 text-blue-400" />
@@ -232,7 +232,7 @@ export default function LoginPage() {
                   </div>
                 </div>
                 {connectionStatus === 'offline' && (
-                  <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 backdrop-blur-sm">
+                  <div className="p-4 rounded-lg bg-red-500/10 border border-red-500/20 backdrop-blur-sm">
                     <div className="flex items-start">
                       <div className="p-2 bg-red-500/20 rounded-lg mr-3 flex-shrink-0">
                         <AlertCircle className="h-4 w-4 text-red-400" />
@@ -247,36 +247,36 @@ export default function LoginPage() {
             </div>
 
             {/* Enhanced Instructions */}
-            <div className="mt-8 p-8 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-sm relative overflow-hidden">
+            <div className="mt-6 p-5 rounded-xl bg-white/5 border border-white/10 backdrop-blur-sm relative overflow-hidden">
               {/* Instructions background glow */}
               <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 to-pink-500/5 rounded-2xl"></div>
               
               <div className="relative z-10">
-                <h3 className="text-lg font-bold text-white/95 mb-6 flex items-center">
+                <h3 className="text-base font-bold text-white/95 mb-4 flex items-center">
                   <div className="p-2 bg-purple-500/20 rounded-lg mr-3">
-                    <User className="h-5 w-5 text-purple-400" />
+                    <User className="h-4 w-4 text-purple-400" />
                   </div>
                   Getting Started
                 </h3>
-                <ul className="text-sm text-gray-300 space-y-4">
+                <ul className="text-sm text-gray-300 space-y-3">
                   <li className="flex items-start group">
-                    <div className="w-2 h-2 bg-gradient-to-r from-red-400 to-red-500 rounded-full mt-2 mr-4 flex-shrink-0 group-hover:scale-125 transition-transform duration-200"></div>
+                    <div className="w-2 h-2 bg-gradient-to-r from-red-400 to-red-500 rounded-full mt-1 mr-3 flex-shrink-0 group-hover:scale-125 transition-transform duration-200"></div>
                     <span className="leading-relaxed">Obtain your pilot API key from JAL Virtual Airlines</span>
                   </li>
                   <li className="flex items-start group">
-                    <div className="w-2 h-2 bg-gradient-to-r from-red-400 to-red-500 rounded-full mt-2 mr-4 flex-shrink-0 group-hover:scale-125 transition-transform duration-200"></div>
+                    <div className="w-2 h-2 bg-gradient-to-r from-red-400 to-red-500 rounded-full mt-1 mr-3 flex-shrink-0 group-hover:scale-125 transition-transform duration-200"></div>
                     <span className="leading-relaxed">Log in to your JAL Virtual account to generate API key</span>
                   </li>
                   <li className="flex items-start group">
-                    <div className="w-2 h-2 bg-gradient-to-r from-red-400 to-red-500 rounded-full mt-2 mr-4 flex-shrink-0 group-hover:scale-125 transition-transform duration-200"></div>
+                    <div className="w-2 h-2 bg-gradient-to-r from-red-400 to-red-500 rounded-full mt-1 mr-3 flex-shrink-0 group-hover:scale-125 transition-transform duration-200"></div>
                     <span className="leading-relaxed">Enter your API key above to access ACARS system</span>
                   </li>
                   <li className="flex items-start group">
-                    <div className="w-2 h-2 bg-gradient-to-r from-red-400 to-red-500 rounded-full mt-2 mr-4 flex-shrink-0 group-hover:scale-125 transition-transform duration-200"></div>
+                    <div className="w-2 h-2 bg-gradient-to-r from-red-400 to-red-500 rounded-full mt-1 mr-3 flex-shrink-0 group-hover:scale-125 transition-transform duration-200"></div>
                     <span className="leading-relaxed">Configure your Hoppie ID in settings after login</span>
                   </li>
                   <li className="flex items-start group">
-                    <div className="w-2 h-2 bg-gradient-to-r from-red-400 to-red-500 rounded-full mt-2 mr-4 flex-shrink-0 group-hover:scale-125 transition-transform duration-200"></div>
+                    <div className="w-2 h-2 bg-gradient-to-r from-red-400 to-red-500 rounded-full mt-1 mr-3 flex-shrink-0 group-hover:scale-125 transition-transform duration-200"></div>
                     <span className="leading-relaxed">Connect to ACARS network for messaging</span>
                   </li>
                 </ul>
