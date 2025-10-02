@@ -109,7 +109,7 @@ export default function Dashboard() {
             <div className="flex items-center space-x-4">
               <div className="text-right">
                 <p className="text-sm text-gray-300">
-                  {isLoadingPilotInfo ? 'Loading...' : 'JAL Virtual Pilot'}
+                  {isLoadingPilotInfo ? 'Loading...' : 'Welcome Back'}
                 </p>
                 <p className="font-medium text-white">
                   {isLoadingPilotInfo ? '...' : (pilotInfo?.name || user?.name || 'Pilot')}
