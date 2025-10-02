@@ -14,18 +14,16 @@ import {
   FileText,
   Users,
   MapPin,
-  PlaneTakeoff
 } from 'lucide-react';
 import MessagePanel from './MessagePanel';
 import ACARSFeatures from './ACARSFeatures';
-import ROPSPanel from './ROPSPanel';
 import SettingsPanel from './SettingsPanel';
-import SimBriefPanel from './SimBriefPanel';
+import AircraftPanel from './AircraftPanel';
 
 export default function Dashboard() {
   const { user, logout } = useAuth();
   const { messages, refreshMessages, isLoading } = useACARS();
-  const [activeTab, setActiveTab] = useState<'messages' | 'acars' | 'rops' | 'settings' | 'simbrief'>('messages');
+  const [activeTab, setActiveTab] = useState<'messages' | 'acars' | 'aircraft' | 'settings'>('messages');
   const [pilotInfo, setPilotInfo] = useState<{name: string, callsign?: string} | null>(null);
   const [isLoadingPilotInfo, setIsLoadingPilotInfo] = useState(true);
 
@@ -89,8 +87,7 @@ export default function Dashboard() {
   const tabs = [
     { id: 'messages', label: 'Messages', icon: MessageSquare },
     { id: 'acars', label: 'ACARS', icon: FileText },
-    { id: 'simbrief', label: 'SimBrief', icon: PlaneTakeoff },
-    { id: 'rops', label: 'ROPS ATC', icon: Users },
+    { id: 'aircraft', label: 'Aircraft', icon: Plane },
     { id: 'settings', label: 'Settings', icon: Settings },
   ];
 
@@ -161,7 +158,7 @@ export default function Dashboard() {
               return (
                 <button
                   key={tab.id}
-                  onClick={() => setActiveTab(tab.id as 'messages' | 'acars' | 'rops' | 'settings' | 'simbrief')}
+                  onClick={() => setActiveTab(tab.id as 'messages' | 'acars' | 'aircraft' | 'settings')}
                   className={`flex items-center space-x-2 py-4 px-6 rounded-t-lg font-medium text-sm transition-all duration-200 relative ${
                     activeTab === tab.id
                       ? 'text-white bg-gray-700/50 backdrop-blur-sm border-t-2 border-red-500'
@@ -181,37 +178,17 @@ export default function Dashboard() {
       </nav>
 
       {/* Main Content */}
-      <main className="flex-1 relative">
+      <main className="flex-1 relative min-h-0">
         {/* Background Elements */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div className="absolute top-20 right-20 w-72 h-72 bg-red-500/5 rounded-full blur-3xl"></div>
           <div className="absolute bottom-20 left-20 w-96 h-96 bg-blue-500/5 rounded-full blur-3xl"></div>
         </div>
 
-        <div className="relative z-10">
+        <div className="relative z-10 h-full">
           {activeTab === 'messages' && (
-            <div className="p-6">
-              <div className="max-w-7xl mx-auto">
-                <div className="flex items-center justify-between mb-8">
-                  <div>
-                    <h2 className="text-3xl font-bold text-white mb-2">ACARS Messages</h2>
-                    <p className="text-gray-400">Monitor and manage aircraft communications</p>
-                  </div>
-                  <div className="flex items-center space-x-4">
-                    <div className="flex items-center space-x-2 px-4 py-2 bg-gray-800/50 rounded-lg border border-gray-700/50">
-                      <Bell className="h-4 w-4 text-blue-400" />
-                      <span className="text-sm text-gray-300">{messages.length} messages</span>
-                    </div>
-                    <button
-                      onClick={refreshMessages}
-                      disabled={isLoading}
-                      className="flex items-center space-x-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-all duration-200 disabled:opacity-50"
-                    >
-                      <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-                      <span>Refresh</span>
-                    </button>
-                  </div>
-                </div>
+            <div className="h-full p-6">
+              <div className="h-full max-w-7xl mx-auto">
                 <MessagePanel />
               </div>
             </div>
@@ -229,26 +206,12 @@ export default function Dashboard() {
             </div>
           )}
 
-          {activeTab === 'simbrief' && (
-            <div className="p-6">
-              <div className="max-w-7xl mx-auto">
-                <div className="mb-8">
-                  <h2 className="text-3xl font-bold text-white mb-2">SimBrief Flight Data</h2>
-                  <p className="text-gray-400">View detailed flight planning information</p>
-                </div>
-                <SimBriefPanel />
-              </div>
-            </div>
-          )}
 
-          {activeTab === 'rops' && (
-            <div className="p-6">
-              <div className="max-w-7xl mx-auto">
-                <div className="mb-8">
-                  <h2 className="text-3xl font-bold text-white mb-2">ROPS ATC</h2>
-                  <p className="text-gray-400">Communicate with realistic air traffic control</p>
-                </div>
-                <ROPSPanel />
+
+          {activeTab === 'aircraft' && (
+            <div className="h-full p-6">
+              <div className="h-full max-w-7xl mx-auto">
+                <AircraftPanel />
               </div>
             </div>
           )}

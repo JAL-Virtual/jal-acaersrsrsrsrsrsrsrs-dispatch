@@ -19,17 +19,15 @@ export default function SettingsPanel() {
   const [settings, setSettings] = useState({
     hoppieId: user?.hoppieId || '',
     callsign: user?.callsign || '',
-    simbriefId: user?.simbriefId || '',
     autoLoadsheet: true,
     autoReports: true,
     notifications: true,
     soundEnabled: true,
     theme: 'dark' as 'light' | 'dark',
     refreshInterval: 30,
-    spaceLaunches: false,
-    naturalDisasters: false,
-    funnyMessages: false,
-    specialEvents: false
+    spaceLaunches: true,
+    naturalDisasters: true,
+    specialEvents: true
   });
 
   const [isSaving, setIsSaving] = useState(false);
@@ -54,7 +52,6 @@ export default function SettingsPanel() {
         ...prev,
         hoppieId: user.hoppieId || prev.hoppieId,
         callsign: user.callsign || prev.callsign,
-        simbriefId: user.simbriefId || prev.simbriefId
       }));
     }
   }, [user]);
@@ -63,11 +60,10 @@ export default function SettingsPanel() {
     setIsSaving(true);
     
     // Update user data
-    if (settings.hoppieId !== user?.hoppieId || settings.callsign !== user?.callsign || settings.simbriefId !== user?.simbriefId) {
+    if (settings.hoppieId !== user?.hoppieId || settings.callsign !== user?.callsign) {
       updateUser({
         hoppieId: settings.hoppieId,
-        callsign: settings.callsign,
-        simbriefId: settings.simbriefId
+        callsign: settings.callsign
       });
     }
 
@@ -84,17 +80,15 @@ export default function SettingsPanel() {
       const defaultSettings = {
         hoppieId: '',
         callsign: '',
-        simbriefId: '',
         autoLoadsheet: true,
         autoReports: true,
         notifications: true,
         soundEnabled: true,
         theme: 'dark' as 'light' | 'dark',
         refreshInterval: 30,
-        spaceLaunches: false,
-        naturalDisasters: false,
-        funnyMessages: false,
-        specialEvents: false
+        spaceLaunches: true,
+        naturalDisasters: true,
+        specialEvents: true
       };
       setSettings(defaultSettings);
       localStorage.setItem('jal-acars-settings', JSON.stringify(defaultSettings));
@@ -161,22 +155,6 @@ export default function SettingsPanel() {
             </p>
           </div>
 
-          <div>
-            <label htmlFor="simbriefId" className="block text-sm font-medium text-gray-300 mb-1">
-              SimBrief ID
-            </label>
-            <input
-              id="simbriefId"
-              type="text"
-              value={settings.simbriefId}
-              onChange={(e) => updateSetting('simbriefId', e.target.value)}
-              placeholder="Enter your SimBrief ID"
-              className="w-full px-3 py-2 border border-gray-600 rounded-md bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
-            />
-            <p className="text-xs text-gray-400 mt-1">
-              Your SimBrief username for flight planning integration
-            </p>
-          </div>
         </div>
       </div>
 
@@ -246,15 +224,6 @@ export default function SettingsPanel() {
                 <span className="text-sm text-gray-300">Natural Disasters</span>
               </label>
               
-              <label className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  checked={settings.funnyMessages}
-                  onChange={(e) => updateSetting('funnyMessages', e.target.checked)}
-                  className="rounded border-gray-600 bg-gray-700 text-red-500 focus:ring-red-500"
-                />
-                <span className="text-sm text-gray-300">Funny Messages</span>
-              </label>
               
               <label className="flex items-center space-x-2">
                 <input

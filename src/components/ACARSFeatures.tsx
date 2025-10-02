@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useACARS } from '@/hooks/useACARS';
 import { useAuth } from '@/hooks/useAuth';
 import { 
@@ -15,7 +15,17 @@ import {
   Calendar,
   MapPin,
   Cloud,
-  Rocket
+  Rocket,
+  Play,
+  Pause,
+  CheckCircle,
+  ChevronLeft,
+  ChevronRight,
+  ArrowRight,
+  Edit3,
+  Save,
+  X,
+  ChevronDown
 } from 'lucide-react';
 
 interface ACARSFeature {
@@ -28,18 +38,25 @@ interface ACARSFeature {
 }
 
 export default function ACARSFeatures() {
-  const { sendMessage } = useACARS();
+  const { sendMessage, messages } = useACARS();
   const { user } = useAuth();
   const [selectedAircraft, setSelectedAircraft] = useState('');
+  const [selectedFeature, setSelectedFeature] = useState<string>('');
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedMessage, setEditedMessage] = useState('');
+  const [isAutoRunning, setIsAutoRunning] = useState(false);
+  const [autoRunProgress, setAutoRunProgress] = useState(0);
+  const [completedFeatures, setCompletedFeatures] = useState<string[]>([]);
+  const [detectedCallsigns, setDetectedCallsigns] = useState<string[]>([]);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [settings, setSettings] = useState({
     autoLoadsheet: true,
     autoReports: true,
     notifications: true,
     soundEnabled: true,
-    spaceLaunches: false,
-    naturalDisasters: false,
-    funnyMessages: false,
-    specialEvents: false
+    spaceLaunches: true,
+    naturalDisasters: true,
+    specialEvents: true
   });
 
   const acarsFeatures: ACARSFeature[] = [
@@ -171,14 +188,6 @@ export default function ACARSFeatures() {
       category: 'special'
     },
     {
-      id: 'funny-messages',
-      name: 'Send Funny Messages',
-      description: 'Send humorous messages (German humor)',
-      icon: Zap,
-      enabled: settings.funnyMessages,
-      category: 'special'
-    },
-    {
       id: 'special-events',
       name: 'Send Special Events',
       description: 'Send relevant special event notifications',
@@ -187,6 +196,72 @@ export default function ACARSFeatures() {
       category: 'special'
     }
   ];
+
+  // Auto-run all features when callsign is entered and user is JALV
+  useEffect(() => {
+    if (selectedAircraft && user?.callsign === 'JALV' && !isAutoRunning) {
+      startAutoRun();
+    }
+  }, [selectedAircraft, user?.callsign]);
+
+  // Detect callsigns from messages
+  useEffect(() => {
+    const callsigns = new Set<string>();
+    
+    messages.forEach(message => {
+      if (message.from && message.from !== 'JALV' && message.from !== user?.callsign) {
+        callsigns.add(message.from);
+      }
+    });
+    
+    setDetectedCallsigns(Array.from(callsigns).sort());
+  }, [messages, user?.callsign]);
+
+  // Get enabled features only
+  const enabledFeatures = acarsFeatures.filter(feature => feature.enabled);
+
+  const startAutoRun = async () => {
+    if (!selectedAircraft || user?.callsign !== 'JALV') {
+      return;
+    }
+
+    setIsAutoRunning(true);
+    setAutoRunProgress(0);
+    setCompletedFeatures([]);
+
+    for (let i = 0; i < enabledFeatures.length; i++) {
+      const feature = enabledFeatures[i];
+      
+      try {
+        const messageContent = generateMessageContent(feature.id);
+        
+        await sendMessage({
+          from: user?.callsign || 'JALV',
+          to: selectedAircraft,
+          type: 'telex',
+          packet: messageContent
+        });
+
+        setCompletedFeatures(prev => [...prev, feature.id]);
+        setAutoRunProgress(((i + 1) / enabledFeatures.length) * 100);
+
+        // Add delay between messages to avoid overwhelming the system
+        if (i < enabledFeatures.length - 1) {
+          await new Promise(resolve => setTimeout(resolve, 2000)); // 2 second delay
+        }
+      } catch (error) {
+        console.error(`Failed to send ${feature.name}:`, error);
+      }
+    }
+
+    setIsAutoRunning(false);
+  };
+
+  const stopAutoRun = () => {
+    setIsAutoRunning(false);
+    setAutoRunProgress(0);
+  };
+
 
   const handleSendFeature = async (feature: ACARSFeature) => {
     if (!selectedAircraft) {
@@ -202,6 +277,46 @@ export default function ACARSFeatures() {
       type: 'telex',
       packet: messageContent
     });
+  };
+
+  const handleSendEditedMessage = async () => {
+    if (!selectedAircraft || !editedMessage.trim()) {
+      alert('Please select an aircraft and enter a message');
+      return;
+    }
+
+    await sendMessage({
+      from: user?.callsign || 'JALV',
+      to: selectedAircraft,
+      type: 'telex',
+      packet: editedMessage
+    });
+
+    setIsEditing(false);
+    setEditedMessage('');
+    setSelectedFeature('');
+  };
+
+  const startEditing = (featureId: string) => {
+    const message = generateMessageContent(featureId);
+    setSelectedFeature(featureId);
+    setEditedMessage(message);
+    setIsEditing(true);
+  };
+
+  const cancelEditing = () => {
+    setIsEditing(false);
+    setEditedMessage('');
+    setSelectedFeature('');
+  };
+
+  const selectFeature = (featureId: string) => {
+    setSelectedFeature(featureId);
+    setIsDropdownOpen(false);
+  };
+
+  const getSelectedFeature = () => {
+    return acarsFeatures.find(f => f.id === selectedFeature);
   };
 
   const generateMessageContent = (featureId: string): string => {
@@ -221,7 +336,6 @@ export default function ACARSFeatures() {
       'slot-notification': 'SLOT NOTIFICATION\nORIGIN: RJAA\nDESTINATION: RJTT\nEOBT: 1500Z\nCONFIRM DETAILS',
       'space-launches': 'SPACE LAUNCH NOTIFICATION\nLAUNCH SITE: TANEGASHIMA\nTIME: 1600Z\nAVOID AREA: 300NM RADIUS',
       'natural-disasters': 'NATURAL DISASTER ALERT\nTYPHOON APPROACHING\nPOSITION: 35N 140E\nAVOID AREA: 300NM RADIUS',
-      'funny-messages': 'FUNNY MESSAGE\nWHY DID THE PILOT CROSS THE ROAD?\nTO GET TO THE OTHER SIDE OF THE RUNWAY!',
       'special-events': 'SPECIAL EVENT\nWORLD CUP FINAL TODAY\nEXPECT INCREASED TRAFFIC'
     };
 
@@ -255,9 +369,90 @@ export default function ACARSFeatures() {
             onChange={(e) => setSelectedAircraft(e.target.value.toUpperCase())}
             placeholder="Enter aircraft callsign (e.g., JAL123)"
             className="px-3 py-2 border border-gray-600 rounded-md bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+            disabled={isAutoRunning}
           />
           <span className="text-sm text-gray-400">Selected: {selectedAircraft || 'None'}</span>
         </div>
+
+        {/* Detected Callsigns */}
+        {detectedCallsigns.length > 0 && (
+          <div className="mt-4 p-4 bg-blue-900/20 border border-blue-500/30 rounded-lg">
+            <div className="flex items-center space-x-2 mb-3">
+              <Zap className="h-4 w-4 text-blue-400" />
+              <span className="text-sm font-medium text-blue-400">Detected Callsigns</span>
+              <span className="text-xs text-gray-400">({detectedCallsigns.length} found)</span>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {detectedCallsigns.map((callsign) => (
+                <button
+                  key={callsign}
+                  onClick={() => setSelectedAircraft(callsign)}
+                  className={`px-3 py-1 text-xs rounded-full border transition-colors ${
+                    selectedAircraft === callsign
+                      ? 'bg-blue-600 text-white border-blue-500'
+                      : 'bg-gray-700/50 text-gray-300 border-gray-600 hover:bg-gray-600/50 hover:border-gray-500'
+                  }`}
+                  disabled={isAutoRunning}
+                >
+                  {callsign}
+                </button>
+              ))}
+            </div>
+            <p className="text-xs text-gray-400 mt-2">
+              Click on a callsign to select it for ACARS messaging
+            </p>
+          </div>
+        )}
+        
+        {/* Auto-run Status */}
+        {user?.callsign === 'JALV' && (
+          <div className="mt-4 p-4 bg-blue-900/20 border border-blue-500/30 rounded-lg">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center space-x-2">
+                <Zap className="h-4 w-4 text-blue-400" />
+                <span className="text-sm font-medium text-blue-400">Auto-Run Mode</span>
+              </div>
+              {isAutoRunning ? (
+                <button
+                  onClick={stopAutoRun}
+                  className="flex items-center space-x-1 px-2 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-xs"
+                >
+                  <Pause className="h-3 w-3" />
+                  <span>Stop</span>
+                </button>
+              ) : (
+                <button
+                  onClick={startAutoRun}
+                  disabled={!selectedAircraft}
+                  className="flex items-center space-x-1 px-2 py-1 bg-green-600 hover:bg-green-700 text-white rounded text-xs disabled:opacity-50"
+                >
+                  <Play className="h-3 w-3" />
+                  <span>Start</span>
+                </button>
+              )}
+            </div>
+            <p className="text-xs text-gray-400 mb-2">
+              All enabled ACARS features will automatically run when a callsign is entered
+            </p>
+            {isAutoRunning && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-gray-400">Progress</span>
+                  <span className="text-blue-400">{Math.round(autoRunProgress)}%</span>
+                </div>
+                <div className="w-full bg-gray-700 rounded-full h-2">
+                  <div 
+                    className="bg-blue-500 h-2 rounded-full transition-all duration-300"
+                    style={{ width: `${autoRunProgress}%` }}
+                  ></div>
+                </div>
+                <div className="text-xs text-gray-400">
+                  Completed: {completedFeatures.length} / {enabledFeatures.length}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Settings */}
@@ -280,45 +475,160 @@ export default function ACARSFeatures() {
         </div>
       </div>
 
-      {/* ACARS Features */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {acarsFeatures.map((feature) => {
-          const Icon = feature.icon;
-          return (
-            <div
-              key={feature.id}
-              className={`bg-gray-800 rounded-lg border border-gray-700 p-4 transition-all hover:border-gray-600 ${
-                !feature.enabled ? 'opacity-50' : ''
-              }`}
+      {/* Message Editor */}
+      {isEditing && (
+        <div className="bg-gray-800 rounded-lg border border-gray-700 p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-white">Edit Message</h3>
+            <button
+              onClick={cancelEditing}
+              className="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-colors"
             >
-              <div className="flex items-start justify-between mb-3">
-                <div className="flex items-center space-x-2">
-                  <Icon className="h-5 w-5 text-gray-400" />
-                  <span className={`px-2 py-1 rounded-full text-xs font-medium border ${getCategoryColor(feature.category)}`}>
-                    {feature.category}
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+          
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                Message Content
+              </label>
+              <textarea
+                value={editedMessage}
+                onChange={(e) => setEditedMessage(e.target.value)}
+                className="w-full h-40 px-3 py-2 border border-gray-600 rounded-md bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent font-mono text-sm"
+                placeholder="Enter your ACARS message..."
+              />
+            </div>
+            
+            <div className="flex items-center justify-between">
+              <div className="text-sm text-gray-400">
+                Sending to: <span className="text-white font-mono">{selectedAircraft || 'No aircraft selected'}</span>
+              </div>
+              <div className="flex space-x-2">
+                <button
+                  onClick={cancelEditing}
+                  className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-md transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSendEditedMessage}
+                  disabled={!selectedAircraft || !editedMessage.trim()}
+                  className="flex items-center space-x-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <Send className="h-4 w-4" />
+                  <span>Send Message</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Function Selection */}
+      <div className="bg-gray-800 rounded-lg border border-gray-700 p-6">
+        <h3 className="text-lg font-semibold text-white mb-4">Select ACARS Function</h3>
+        
+        {/* Dropdown Selector */}
+        <div className="relative mb-4">
+          <button
+            onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+            className="w-full flex items-center justify-between px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white hover:bg-gray-600 transition-colors"
+          >
+            <div className="flex items-center space-x-3">
+              {getSelectedFeature() ? (
+                <>
+                  <getSelectedFeature().icon className="h-5 w-5 text-gray-400" />
+                  <span>{getSelectedFeature().name}</span>
+                  <span className={`px-2 py-1 rounded-full text-xs font-medium border ${getCategoryColor(getSelectedFeature().category)}`}>
+                    {getSelectedFeature().category}
                   </span>
-                </div>
-                <span className={`text-xs px-2 py-1 rounded-full ${
-                  feature.enabled ? 'bg-green-900/20 text-green-400' : 'bg-gray-900/20 text-gray-400'
-                }`}>
-                  {feature.enabled ? 'Enabled' : 'Disabled'}
+                </>
+              ) : (
+                <span className="text-gray-400">Choose an ACARS function...</span>
+              )}
+            </div>
+            <ChevronDown className={`h-5 w-5 text-gray-400 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
+          </button>
+          
+          {/* Dropdown Menu */}
+          {isDropdownOpen && (
+            <div className="absolute top-full left-0 right-0 mt-1 bg-gray-700 border border-gray-600 rounded-lg shadow-lg z-10 max-h-60 overflow-y-auto">
+              {enabledFeatures.map((feature) => {
+                const Icon = feature.icon;
+                return (
+                  <button
+                    key={feature.id}
+                    onClick={() => selectFeature(feature.id)}
+                    className="w-full flex items-center space-x-3 px-4 py-3 text-left hover:bg-gray-600 transition-colors border-b border-gray-600 last:border-b-0"
+                  >
+                    <Icon className="h-5 w-5 text-gray-400" />
+                    <div className="flex-1">
+                      <div className="text-white font-medium">{feature.name}</div>
+                      <div className="text-sm text-gray-400">{feature.description}</div>
+                    </div>
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium border ${getCategoryColor(feature.category)}`}>
+                      {feature.category}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Selected Feature Actions */}
+        {getSelectedFeature() && (
+          <div className="space-y-4">
+            {/* Feature Details */}
+            <div className="p-4 bg-gray-700/50 rounded-lg border border-gray-600/50">
+              <div className="flex items-center space-x-2 mb-2">
+                <getSelectedFeature().icon className="h-5 w-5 text-gray-400" />
+                <h4 className="font-medium text-white">{getSelectedFeature().name}</h4>
+                <span className={`px-2 py-1 rounded-full text-xs font-medium border ${getCategoryColor(getSelectedFeature().category)}`}>
+                  {getSelectedFeature().category}
                 </span>
               </div>
+              <p className="text-sm text-gray-400 mb-3">{getSelectedFeature().description}</p>
               
-              <h4 className="font-medium text-white mb-2">{feature.name}</h4>
-              <p className="text-sm text-gray-400 mb-4">{feature.description}</p>
+              {/* Message Preview */}
+              <div className="bg-gray-900/50 rounded p-3 border border-gray-700/50">
+                <h5 className="text-xs font-medium text-gray-300 mb-2">Message Preview:</h5>
+                <pre className="text-xs text-gray-300 font-mono whitespace-pre-wrap">
+                  {generateMessageContent(getSelectedFeature().id)}
+                </pre>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex space-x-3">
+              <button
+                onClick={() => handleSendFeature(getSelectedFeature())}
+                disabled={!selectedAircraft || isAutoRunning}
+                className="flex-1 flex items-center justify-center space-x-2 py-3 px-4 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {completedFeatures.includes(getSelectedFeature().id) ? (
+                  <CheckCircle className="h-5 w-5 text-green-400" />
+                ) : (
+                  <Send className="h-5 w-5" />
+                )}
+                <span>
+                  {completedFeatures.includes(getSelectedFeature().id) ? 'Sent' : 'Send'}
+                </span>
+              </button>
               
               <button
-                onClick={() => handleSendFeature(feature)}
-                disabled={!feature.enabled || !selectedAircraft}
-                className="w-full flex items-center justify-center space-x-2 py-2 px-3 bg-red-600 hover:bg-red-700 text-white rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                onClick={() => startEditing(getSelectedFeature().id)}
+                disabled={isAutoRunning}
+                className="flex-1 flex items-center justify-center space-x-2 py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <Send className="h-4 w-4" />
-                <span>Send</span>
+                <Edit3 className="h-5 w-5" />
+                <span>Edit & Send</span>
               </button>
             </div>
-          );
-        })}
+          </div>
+        )}
       </div>
     </div>
   );

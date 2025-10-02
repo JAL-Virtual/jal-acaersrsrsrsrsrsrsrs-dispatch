@@ -5,7 +5,6 @@ export interface User {
   email: string;
   callsign: string;
   hoppieId?: string;
-  simbriefId?: string;
   role: 'pilot' | 'dispatch' | 'admin';
 }
 
@@ -77,9 +76,3 @@ export interface ACARSSettings {
   theme: 'light' | 'dark';
 }
 
-export interface ROPSSettings {
-  pdcEnabled: boolean;
-  cpdlcEnabled: boolean;
-  oceanicClearance: boolean;
-  directToInstructions: boolean;
-}

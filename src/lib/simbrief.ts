@@ -1,390 +1,324 @@
-import { APIResponse } from '@/types';
-
-// SimBrief API Configuration
-const SIMBRIEF_API_BASE = 'https://www.simbrief.com/api/xml.fetcher.php';
-
-// SimBrief API Response Types
-interface SimBriefAPIResponse {
-  [key: string]: unknown;
-  callsign?: string;
-  flight_number?: string;
-  origin?: {
-    icao_code?: string;
-    icao?: string;
-    iata_code?: string;
-    iata?: string;
-    name?: string;
-    city?: string;
-    country?: string;
-  };
-  destination?: {
-    icao_code?: string;
-    icao?: string;
-    iata_code?: string;
-    iata?: string;
-    name?: string;
-    city?: string;
-    country?: string;
-  };
-  aircraft?: {
-    icao_code?: string;
-    icao?: string;
-    name?: string;
-    registration?: string;
-  };
-  atc?: {
-    callsign?: string;
-  };
-  navlog?: {
-    route?: string;
-  };
-  route?: string;
-  alternate?: {
-    icao_code?: string;
-    icao?: string;
-  };
-  general?: {
-    cruise_altitude?: string;
-    cruise_tas?: string;
-  };
-  cruise_altitude?: string;
-  cruise_speed?: string;
-  times?: {
-    sched_out?: string;
-    sched_in?: string;
-    est_block?: string;
-    est_time_enroute?: string;
-  };
-  departure_time?: string;
-  arrival_time?: string;
-  block_time?: string;
-  flight_time?: string;
-  fuel?: {
-    plan_ramp?: string;
-    planned?: string;
-    alternate_burn?: string;
-    alternate?: string;
-    reserve?: string;
-    total?: string;
-    taxi?: string;
-    enroute_burn?: string;
-    contingency?: string;
-    etops?: string;
-    min_takeoff?: string;
-    plan_takeoff?: string;
-    plan_landing?: string;
-    avg_fuel_flow?: string;
-    max_tanks?: string;
-  };
-  weights?: {
-    payload?: string;
-    fuel_weight?: string;
-    est_tow?: string;
-    max_tow?: string;
-  };
-  payload?: string;
-  fuel_weight?: string;
-  est_tow?: string;
-  max_tow?: string;
-  weather?: {
-    origin?: {
-      wind?: string;
-      visibility?: string;
-      temperature?: string;
-      pressure?: string;
-    };
-    destination?: {
-      wind?: string;
-      visibility?: string;
-      temperature?: string;
-      pressure?: string;
-    };
-  };
-  loadsheet?: {
-    passengers?: string;
-    cargo?: string;
-    fuel?: string;
-    total_weight?: string;
-    balance?: string;
-  };
-  passengers?: string;
-  cargo?: string;
-  total_weight?: string;
-  balance?: string;
-  id?: string;
-}
-
-// SimBrief Flight Data Types
-export interface SimBriefFlight {
-  id: string;
-  callsign: string;
-  flightNumber: string;
-  origin: {
-    icao: string;
-    iata: string;
-    name: string;
-    city: string;
-    country: string;
-  };
-  destination: {
-    icao: string;
-    iata: string;
-    name: string;
-    city: string;
-    country: string;
-  };
-  aircraft: {
-    icao: string;
-    name: string;
-    registration: string;
-  };
-  route: {
-    planned: string;
-    alternate: string;
-    cruiseAltitude: string;
-    cruiseSpeed: string;
-  };
-  times: {
-    departure: string;
-    arrival: string;
-    blockTime: string;
-    flightTime: string;
-  };
-  fuel: {
-    planned: number;
-    alternate: number;
-    reserve: number;
-    total: number;
-    taxi: number;
-    enroute: number;
-    contingency: number;
-    etops: number;
-    minTakeoff: number;
-    planTakeoff: number;
-    planLanding: number;
-    avgFuelFlow: number;
-    maxTanks: number;
-  };
-  weights: {
-    payload: number;
-    fuel: number;
-    total: number;
-    maxTakeoff: number;
-  };
-  weather: {
+// SimBrief API Integration for Loadsheet Sync
+export interface SimBriefFlightPlan {
+  general: {
+    icao_airline: string;
+    flight_number: string;
+    callsign: string;
     origin: {
-      wind: string;
-      visibility: string;
-      temperature: string;
-      pressure: string;
+      icao_code: string;
+      iata_code: string;
+      name: string;
     };
     destination: {
-      wind: string;
-      visibility: string;
-      temperature: string;
-      pressure: string;
+      icao_code: string;
+      iata_code: string;
+      name: string;
+    };
+    aircraft: {
+      icao: string;
+      name: string;
+      registration: string;
+    };
+    fuel: {
+      plan_ramp: number;
+      plan_takeoff: number;
+      plan_landing: number;
+      plan_remains: number;
+      units: string;
+    };
+    weights: {
+      cargo: number;
+      est_tow: number;
+      est_zfw: number;
+      max_tow: number;
+      max_zfw: number;
+      max_cargo: number;
+      passenger_count: number;
+      passenger_weight: number;
+      units: string;
+    };
+    times: {
+      est_departure: string;
+      est_arrival: string;
+      est_duration: string;
     };
   };
+  crew: {
+    captain: string;
+    first_officer: string;
+  };
   loadsheet: {
-    passengers: number;
-    cargo: number;
-    fuel: number;
-    totalWeight: number;
-    balance: number;
+    cargo: Array<{
+      name: string;
+      weight: number;
+      position: string;
+    }>;
+    passengers: {
+      total: number;
+      distribution: Array<{
+        class: string;
+        count: number;
+        weight: number;
+      }>;
+    };
+    fuel: {
+      total: number;
+      distribution: Array<{
+        tank: string;
+        weight: number;
+      }>;
+    };
   };
 }
 
-// SimBrief API Client
-export class SimBriefAPI {
-  private username: string;
+export interface SimBriefRequest {
+  username: string;
+  userid: string;
+  type: string;
+  orig: string;
+  dest: string;
+  acdata?: string;
+  custom_airframe?: string;
+}
 
-  constructor(username: string) {
-    this.username = username;
+export class SimBriefAPI {
+  private baseUrl = 'https://www.simbrief.com/api/xml.fetcher.php';
+  private apiKey: string;
+
+  constructor(apiKey: string) {
+    this.apiKey = apiKey;
   }
 
-  async fetchFlightData(): Promise<APIResponse<SimBriefFlight>> {
+  async generateFlightPlan(request: SimBriefRequest): Promise<SimBriefFlightPlan> {
     try {
-      const url = `${SIMBRIEF_API_BASE}?userid=${encodeURIComponent(this.username)}&json=v2`;
-      console.log('SimBrief API URL:', url); // Debug log
-      console.log('SimBrief Username:', this.username); // Debug log
-      
-      const response = await fetch(url, {
+      const params = new URLSearchParams({
+        username: request.username,
+        userid: request.userid,
+        type: request.type,
+        orig: request.orig,
+        dest: request.dest,
+        ...(request.acdata && { acdata: request.acdata }),
+        ...(request.custom_airframe && { custom_airframe: request.custom_airframe })
+      });
+
+      const response = await fetch(`${this.baseUrl}?${params}`, {
         method: 'GET',
         headers: {
           'Accept': 'application/json',
-        },
+          'User-Agent': 'JAL-ACARS/1.0'
+        }
       });
 
-      console.log('SimBrief Response Status:', response.status); // Debug log
-      console.log('SimBrief Response OK:', response.ok); // Debug log
-
       if (!response.ok) {
-        const errorText = await response.text();
-        console.log('SimBrief Error Response:', errorText); // Debug log
-        return {
-          success: false,
-          error: `SimBrief API error: ${response.status} ${response.statusText}`
-        };
+        throw new Error(`SimBrief API error: ${response.status} ${response.statusText}`);
       }
 
       const data = await response.json();
-      console.log('SimBrief API Response:', data); // Debug log
-      console.log('SimBrief Response Type:', typeof data); // Debug log
-      console.log('SimBrief Response Keys:', Object.keys(data)); // Debug log
-      
-      if (data.fetch && data.fetch.status === 'Success') {
-        const flight = this.parseFlightData(data);
-        console.log('Parsed Flight Data:', flight); // Debug log
-        return {
-          success: true,
-          data: flight,
-          message: 'Flight data retrieved successfully'
-        };
-      } else if (data.status === 'Success' || data.fetch?.status === 'Success') {
-        // Handle different response formats
-        const flight = this.parseFlightData(data);
-        console.log('Parsed Flight Data (alternative format):', flight); // Debug log
-        return {
-          success: true,
-          data: flight,
-          message: 'Flight data retrieved successfully'
-        };
-      } else {
-        console.log('SimBrief API Error:', data.fetch?.status || data.status || 'Unknown error'); // Debug log
-        console.log('SimBrief Error Data:', data); // Debug log
-        return {
-          success: false,
-          error: data.fetch?.status || data.status || 'Failed to fetch flight data'
-        };
-      }
-    } catch (error: unknown) {
+      return this.parseFlightPlan(data);
+    } catch (error) {
       console.error('SimBrief API error:', error);
-      const err = error as { message?: string };
-      return {
-        success: false,
-        error: err.message || 'Network error while fetching SimBrief data'
-      };
+      throw new Error(`Failed to generate flight plan: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
-  private parseFlightData(data: Record<string, unknown>): SimBriefFlight {
-    // Handle different response formats
-    console.log('Full API response structure:', data); // Debug log
-    
-    // Try different possible structures
-    let flight: SimBriefAPIResponse = (data.fetch as SimBriefAPIResponse) || (data as SimBriefAPIResponse);
-    
-    // If data.fetch doesn't exist, try the data itself
-    if (!flight || Object.keys(flight).length < 5) {
-      console.log('Trying data directly...'); // Debug log
-      flight = data as SimBriefAPIResponse;
-    }
-    
-    console.log('Raw flight data:', flight); // Debug log
-    console.log('Flight data keys:', Object.keys(flight || {})); // Debug log
-    
-    // Check for common SimBrief fields
-    console.log('Flight callsign:', flight?.callsign); // Debug log
-    console.log('ATC callsign:', flight?.atc?.callsign); // Debug log
-    console.log('Flight origin:', flight?.origin); // Debug log
-    console.log('Flight destination:', flight?.destination); // Debug log
-    console.log('Flight aircraft:', flight?.aircraft); // Debug log
-    console.log('Flight fuel:', flight?.fuel); // Debug log
-    console.log('Flight weights:', flight?.weights); // Debug log
-    console.log('Flight loadsheet:', flight?.loadsheet); // Debug log
-    
+  private parseFlightPlan(data: any): SimBriefFlightPlan {
     return {
-      id: flight.id || Date.now().toString(),
-      callsign: flight.callsign || flight.atc?.callsign || 'N/A',
-      flightNumber: flight.flight_number || 'N/A',
-      origin: {
-        icao: flight.origin?.icao_code || flight.origin?.icao || 'N/A',
-        iata: flight.origin?.iata_code || flight.origin?.iata || 'N/A',
-        name: flight.origin?.name || 'N/A',
-        city: flight.origin?.city || 'N/A',
-        country: flight.origin?.country || 'N/A'
-      },
-      destination: {
-        icao: flight.destination?.icao_code || flight.destination?.icao || 'N/A',
-        iata: flight.destination?.iata_code || flight.destination?.iata || 'N/A',
-        name: flight.destination?.name || 'N/A',
-        city: flight.destination?.city || 'N/A',
-        country: flight.destination?.country || 'N/A'
-      },
-      aircraft: {
-        icao: flight.aircraft?.icao_code || flight.aircraft?.icao || 'N/A',
-        name: flight.aircraft?.name || 'N/A',
-        registration: flight.aircraft?.registration || 'N/A'
-      },
-      route: {
-        planned: flight.navlog?.route || flight.route || 'N/A',
-        alternate: flight.alternate?.icao_code || flight.alternate?.icao || 'N/A',
-        cruiseAltitude: flight.general?.cruise_altitude || flight.cruise_altitude || 'N/A',
-        cruiseSpeed: flight.general?.cruise_tas || flight.cruise_speed || 'N/A'
-      },
-      times: {
-        departure: flight.times?.sched_out || flight.departure_time || 'N/A',
-        arrival: flight.times?.sched_in || flight.arrival_time || 'N/A',
-        blockTime: flight.times?.est_block || flight.block_time || 'N/A',
-        flightTime: flight.times?.est_time_enroute || flight.flight_time || 'N/A'
-      },
-      fuel: {
-        planned: parseInt(flight.fuel?.plan_ramp || flight.fuel?.planned || '0'),
-        alternate: parseInt(flight.fuel?.alternate_burn || flight.fuel?.alternate || '0'),
-        reserve: parseInt(flight.fuel?.reserve || flight.fuel?.reserve || '0'),
-        total: parseInt(flight.fuel?.plan_ramp || flight.fuel?.total || '0'),
-        taxi: parseInt(flight.fuel?.taxi || '0'),
-        enroute: parseInt(flight.fuel?.enroute_burn || '0'),
-        contingency: parseInt(flight.fuel?.contingency || '0'),
-        etops: parseInt(flight.fuel?.etops || '0'),
-        minTakeoff: parseInt(flight.fuel?.min_takeoff || '0'),
-        planTakeoff: parseInt(flight.fuel?.plan_takeoff || '0'),
-        planLanding: parseInt(flight.fuel?.plan_landing || '0'),
-        avgFuelFlow: parseInt(flight.fuel?.avg_fuel_flow || '0'),
-        maxTanks: parseInt(flight.fuel?.max_tanks || '0')
-      },
-      weights: {
-        payload: parseInt(flight.weights?.payload || flight.payload || '0'),
-        fuel: parseInt(flight.weights?.fuel_weight || flight.fuel_weight || '0'),
-        total: parseInt(flight.weights?.est_tow || flight.est_tow || '0'),
-        maxTakeoff: parseInt(flight.weights?.max_tow || flight.max_tow || '0')
-      },
-      weather: {
+      general: {
+        icao_airline: data.general?.icao_airline || '',
+        flight_number: data.general?.flight_number || '',
+        callsign: data.general?.callsign || '',
         origin: {
-          wind: flight.weather?.origin?.wind || 'N/A',
-          visibility: flight.weather?.origin?.visibility || 'N/A',
-          temperature: flight.weather?.origin?.temperature || 'N/A',
-          pressure: flight.weather?.origin?.pressure || 'N/A'
+          icao_code: data.origin?.icao_code || '',
+          iata_code: data.origin?.iata_code || '',
+          name: data.origin?.name || ''
         },
         destination: {
-          wind: flight.weather?.destination?.wind || 'N/A',
-          visibility: flight.weather?.destination?.visibility || 'N/A',
-          temperature: flight.weather?.destination?.temperature || 'N/A',
-          pressure: flight.weather?.destination?.pressure || 'N/A'
+          icao_code: data.destination?.icao_code || '',
+          iata_code: data.destination?.iata_code || '',
+          name: data.destination?.name || ''
+        },
+        aircraft: {
+          icao: data.aircraft?.icao || '',
+          name: data.aircraft?.name || '',
+          registration: data.aircraft?.registration || ''
+        },
+        fuel: {
+          plan_ramp: parseFloat(data.fuel?.plan_ramp) || 0,
+          plan_takeoff: parseFloat(data.fuel?.plan_takeoff) || 0,
+          plan_landing: parseFloat(data.fuel?.plan_landing) || 0,
+          plan_remains: parseFloat(data.fuel?.plan_remains) || 0,
+          units: data.fuel?.units || 'lbs'
+        },
+        weights: {
+          cargo: parseFloat(data.weights?.cargo) || 0,
+          est_tow: parseFloat(data.weights?.est_tow) || 0,
+          est_zfw: parseFloat(data.weights?.est_zfw) || 0,
+          max_tow: parseFloat(data.weights?.max_tow) || 0,
+          max_zfw: parseFloat(data.weights?.max_zfw) || 0,
+          max_cargo: parseFloat(data.weights?.max_cargo) || 0,
+          passenger_count: parseInt(data.weights?.passenger_count) || 0,
+          passenger_weight: parseFloat(data.weights?.passenger_weight) || 0,
+          units: data.weights?.units || 'lbs'
+        },
+        times: {
+          est_departure: data.times?.est_departure || '',
+          est_arrival: data.times?.est_arrival || '',
+          est_duration: data.times?.est_duration || ''
         }
       },
+      crew: {
+        captain: data.crew?.captain || '',
+        first_officer: data.crew?.first_officer || ''
+      },
       loadsheet: {
-        passengers: parseInt(flight.loadsheet?.passengers || flight.passengers || '0'),
-        cargo: parseInt(flight.loadsheet?.cargo || flight.cargo || '0'),
-        fuel: parseInt(typeof flight.loadsheet?.fuel === 'string' ? flight.loadsheet.fuel : typeof flight.fuel === 'string' ? flight.fuel : '0'),
-        totalWeight: parseInt(flight.loadsheet?.total_weight || flight.total_weight || '0'),
-        balance: parseFloat(flight.loadsheet?.balance || flight.balance || '0')
+        cargo: data.loadsheet?.cargo || [],
+        passengers: {
+          total: parseInt(data.loadsheet?.passengers?.total) || 0,
+          distribution: data.loadsheet?.passengers?.distribution || []
+        },
+        fuel: {
+          total: parseFloat(data.loadsheet?.fuel?.total) || 0,
+          distribution: data.loadsheet?.fuel?.distribution || []
+        }
       }
     };
   }
+
+  // Convert SimBrief data to ACARS loadsheet format
+  formatLoadsheet(flightPlan: SimBriefFlightPlan, type: 'preliminary' | 'final'): string {
+    const { general, crew, loadsheet } = flightPlan;
+    
+    const loadsheetType = type === 'preliminary' ? 'PRELIMINARY LOADSHEET' : 'FINAL LOADSHEET';
+    
+    let loadsheetText = `${loadsheetType}\n`;
+    loadsheetText += `FLIGHT: ${general.callsign}\n`;
+    loadsheetText += `AIRCRAFT: ${general.aircraft.name} (${general.aircraft.registration})\n`;
+    loadsheetText += `ROUTE: ${general.origin.icao_code} → ${general.destination.icao_code}\n`;
+    loadsheetText += `PAX: ${general.weights.passenger_count}\n`;
+    loadsheetText += `CARGO: ${general.weights.cargo}${general.weights.units}\n`;
+    loadsheetText += `FUEL: ${general.fuel.plan_takeoff}${general.fuel.units}\n`;
+    
+    if (type === 'final') {
+      loadsheetText += `ZFW: ${general.weights.est_zfw}${general.weights.units}\n`;
+      loadsheetText += `TOW: ${general.weights.est_tow}${general.weights.units}\n`;
+    }
+    
+    loadsheetText += `CAPTAIN: ${crew.captain}\n`;
+    loadsheetText += `FO: ${crew.first_officer}\n`;
+    
+    if (loadsheet.cargo.length > 0) {
+      loadsheetText += `\nCARGO BREAKDOWN:\n`;
+      loadsheet.cargo.forEach(item => {
+        loadsheetText += `${item.name}: ${item.weight}${general.weights.units} (${item.position})\n`;
+      });
+    }
+    
+    if (loadsheet.passengers.distribution.length > 0) {
+      loadsheetText += `\nPAX BREAKDOWN:\n`;
+      loadsheet.passengers.distribution.forEach(pax => {
+        loadsheetText += `${pax.class}: ${pax.count} pax (${pax.weight}${general.weights.units})\n`;
+      });
+    }
+    
+    if (loadsheet.fuel.distribution.length > 0) {
+      loadsheetText += `\nFUEL BREAKDOWN:\n`;
+      loadsheet.fuel.distribution.forEach(tank => {
+        loadsheetText += `${tank.tank}: ${tank.weight}${general.fuel.units}\n`;
+      });
+    }
+    
+    return loadsheetText;
+  }
+
+  // Validate SimBrief credentials
+  async validateCredentials(username: string, userid: string): Promise<boolean> {
+    try {
+      const testRequest: SimBriefRequest = {
+        username,
+        userid,
+        type: 'IFR',
+        orig: 'RJAA',
+        dest: 'RJTT'
+      };
+      
+      await this.generateFlightPlan(testRequest);
+      return true;
+    } catch (error) {
+      console.error('SimBrief credentials validation failed:', error);
+      return false;
+    }
+  }
 }
 
-// Utility functions
-export const formatSimBriefTime = (timeString: string): string => {
-  if (timeString === 'N/A') return timeString;
-  // Convert SimBrief time format to readable format
-  return timeString;
-};
+// Utility functions for loadsheet management
+export const loadsheetUtils = {
+  // Convert weight units
+  convertWeight(value: number, fromUnit: string, toUnit: string): number {
+    if (fromUnit === toUnit) return value;
+    
+    // Convert to kg first
+    let kgValue = value;
+    if (fromUnit === 'lbs') {
+      kgValue = value * 0.453592;
+    } else if (fromUnit === 'kg') {
+      kgValue = value;
+    }
+    
+    // Convert from kg to target unit
+    if (toUnit === 'lbs') {
+      return kgValue / 0.453592;
+    } else if (toUnit === 'kg') {
+      return kgValue;
+    }
+    
+    return value;
+  },
 
-export const formatSimBriefWeight = (weight: number): string => {
-  return `${weight.toLocaleString()} kg`;
-};
+  // Format weight with units
+  formatWeight(value: number, unit: string): string {
+    return `${Math.round(value)}${unit}`;
+  },
 
-export const formatSimBriefFuel = (fuel: number): string => {
-  return `${fuel.toLocaleString()} kg`;
+  // Calculate fuel efficiency
+  calculateFuelEfficiency(flightPlan: SimBriefFlightPlan): {
+    fuelPerHour: number;
+    fuelPerNM: number;
+    efficiency: string;
+  } {
+    const { fuel, times } = flightPlan.general;
+    const duration = this.parseDuration(times.est_duration);
+    const fuelUsed = fuel.plan_takeoff - fuel.plan_landing;
+    
+    const fuelPerHour = duration > 0 ? fuelUsed / duration : 0;
+    const fuelPerNM = fuelPerHour / 500; // Assuming 500 NM average speed
+    
+    let efficiency = 'Normal';
+    if (fuelPerHour < 8000) efficiency = 'Excellent';
+    else if (fuelPerHour > 12000) efficiency = 'High Consumption';
+    
+    return {
+      fuelPerHour: Math.round(fuelPerHour),
+      fuelPerNM: Math.round(fuelPerNM),
+      efficiency
+    };
+  },
+
+  // Parse duration string to hours
+  parseDuration(duration: string): number {
+    const match = duration.match(/(\d+):(\d+)/);
+    if (match) {
+      const hours = parseInt(match[1]);
+      const minutes = parseInt(match[2]);
+      return hours + (minutes / 60);
+    }
+    return 0;
+  },
+
+  // Generate loadsheet summary
+  generateSummary(flightPlan: SimBriefFlightPlan): string {
+    const { general } = flightPlan;
+    const efficiency = this.calculateFuelEfficiency(flightPlan);
+    
+    return `Flight ${general.callsign}: ${general.weights.passenger_count} pax, ${general.weights.cargo}${general.weights.units} cargo, ${general.fuel.plan_takeoff}${general.fuel.units} fuel. Efficiency: ${efficiency.efficiency}`;
+  }
 };
