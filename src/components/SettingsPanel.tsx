@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { 
   Settings, 
@@ -35,6 +35,31 @@ export default function SettingsPanel() {
 
   const [isSaving, setIsSaving] = useState(false);
 
+  // Load settings from localStorage on component mount
+  useEffect(() => {
+    const savedSettings = localStorage.getItem('jal-acars-settings');
+    if (savedSettings) {
+      try {
+        const parsedSettings = JSON.parse(savedSettings);
+        setSettings(prev => ({ ...prev, ...parsedSettings }));
+      } catch (error) {
+        console.error('Failed to parse saved settings:', error);
+      }
+    }
+  }, []);
+
+  // Update settings when user data changes
+  useEffect(() => {
+    if (user) {
+      setSettings(prev => ({
+        ...prev,
+        hoppieId: user.hoppieId || prev.hoppieId,
+        callsign: user.callsign || prev.callsign,
+        simbriefId: user.simbriefId || prev.simbriefId
+      }));
+    }
+  }, [user]);
+
   const handleSave = async () => {
     setIsSaving(true);
     
@@ -47,13 +72,12 @@ export default function SettingsPanel() {
       });
     }
 
-    // Save settings to localStorage
-    localStorage.setItem('jal-acars-settings', JSON.stringify(settings));
-    
+    // Settings are already saved to localStorage via updateSetting
+    // Just show success message
     setTimeout(() => {
       setIsSaving(false);
       alert('Settings saved successfully!');
-    }, 1000);
+    }, 500);
   };
 
   const handleReset = () => {
@@ -86,7 +110,12 @@ export default function SettingsPanel() {
   };
 
   const updateSetting = (key: keyof typeof settings, value: any) => {
-    setSettings(prev => ({ ...prev, [key]: value }));
+    setSettings(prev => {
+      const newSettings = { ...prev, [key]: value };
+      // Auto-save to localStorage when settings change
+      localStorage.setItem('jal-acars-settings', JSON.stringify(newSettings));
+      return newSettings;
+    });
   };
 
   return (

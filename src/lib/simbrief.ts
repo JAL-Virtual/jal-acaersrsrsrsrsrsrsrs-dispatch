@@ -85,6 +85,8 @@ export class SimBriefAPI {
   async fetchFlightData(): Promise<APIResponse<SimBriefFlight>> {
     try {
       const url = `${SIMBRIEF_API_BASE}?userid=${encodeURIComponent(this.username)}&json=v2`;
+      console.log('SimBrief API URL:', url); // Debug log
+      console.log('SimBrief Username:', this.username); // Debug log
       
       const response = await fetch(url, {
         method: 'GET',
@@ -93,7 +95,12 @@ export class SimBriefAPI {
         },
       });
 
+      console.log('SimBrief Response Status:', response.status); // Debug log
+      console.log('SimBrief Response OK:', response.ok); // Debug log
+
       if (!response.ok) {
+        const errorText = await response.text();
+        console.log('SimBrief Error Response:', errorText); // Debug log
         return {
           success: false,
           error: `SimBrief API error: ${response.status} ${response.statusText}`
@@ -102,6 +109,8 @@ export class SimBriefAPI {
 
       const data = await response.json();
       console.log('SimBrief API Response:', data); // Debug log
+      console.log('SimBrief Response Type:', typeof data); // Debug log
+      console.log('SimBrief Response Keys:', Object.keys(data)); // Debug log
       
       if (data.fetch && data.fetch.status === 'Success') {
         const flight = this.parseFlightData(data);
@@ -111,11 +120,21 @@ export class SimBriefAPI {
           data: flight,
           message: 'Flight data retrieved successfully'
         };
+      } else if (data.status === 'Success' || data.fetch?.status === 'Success') {
+        // Handle different response formats
+        const flight = this.parseFlightData(data);
+        console.log('Parsed Flight Data (alternative format):', flight); // Debug log
+        return {
+          success: true,
+          data: flight,
+          message: 'Flight data retrieved successfully'
+        };
       } else {
-        console.log('SimBrief API Error:', data.fetch?.status || 'Unknown error'); // Debug log
+        console.log('SimBrief API Error:', data.fetch?.status || data.status || 'Unknown error'); // Debug log
+        console.log('SimBrief Error Data:', data); // Debug log
         return {
           success: false,
-          error: data.fetch?.status || 'Failed to fetch flight data'
+          error: data.fetch?.status || data.status || 'Failed to fetch flight data'
         };
       }
     } catch (error: unknown) {
@@ -129,54 +148,77 @@ export class SimBriefAPI {
   }
 
   private parseFlightData(data: any): SimBriefFlight {
-    const flight = data.fetch;
+    // Handle different response formats
+    console.log('Full API response structure:', data); // Debug log
+    
+    // Try different possible structures
+    let flight = data.fetch || data;
+    
+    // If data.fetch doesn't exist, try the data itself
+    if (!flight || Object.keys(flight).length < 5) {
+      console.log('Trying data directly...'); // Debug log
+      flight = data;
+    }
+    
+    console.log('Raw flight data:', flight); // Debug log
+    console.log('Flight data keys:', Object.keys(flight || {})); // Debug log
+    
+    // Check for common SimBrief fields
+    console.log('Flight callsign:', flight?.callsign); // Debug log
+    console.log('ATC callsign:', flight?.atc?.callsign); // Debug log
+    console.log('Flight origin:', flight?.origin); // Debug log
+    console.log('Flight destination:', flight?.destination); // Debug log
+    console.log('Flight aircraft:', flight?.aircraft); // Debug log
+    console.log('Flight fuel:', flight?.fuel); // Debug log
+    console.log('Flight weights:', flight?.weights); // Debug log
+    console.log('Flight loadsheet:', flight?.loadsheet); // Debug log
     
     return {
       id: flight.id || Date.now().toString(),
-      callsign: flight.callsign || 'N/A',
+      callsign: flight.callsign || flight.atc?.callsign || 'N/A',
       flightNumber: flight.flight_number || 'N/A',
       origin: {
-        icao: flight.origin?.icao_code || 'N/A',
-        iata: flight.origin?.iata_code || 'N/A',
+        icao: flight.origin?.icao_code || flight.origin?.icao || 'N/A',
+        iata: flight.origin?.iata_code || flight.origin?.iata || 'N/A',
         name: flight.origin?.name || 'N/A',
         city: flight.origin?.city || 'N/A',
         country: flight.origin?.country || 'N/A'
       },
       destination: {
-        icao: flight.destination?.icao_code || 'N/A',
-        iata: flight.destination?.iata_code || 'N/A',
+        icao: flight.destination?.icao_code || flight.destination?.icao || 'N/A',
+        iata: flight.destination?.iata_code || flight.destination?.iata || 'N/A',
         name: flight.destination?.name || 'N/A',
         city: flight.destination?.city || 'N/A',
         country: flight.destination?.country || 'N/A'
       },
       aircraft: {
-        icao: flight.aircraft?.icao_code || 'N/A',
+        icao: flight.aircraft?.icao_code || flight.aircraft?.icao || 'N/A',
         name: flight.aircraft?.name || 'N/A',
         registration: flight.aircraft?.registration || 'N/A'
       },
       route: {
-        planned: flight.navlog?.route || 'N/A',
-        alternate: flight.alternate?.icao_code || 'N/A',
-        cruiseAltitude: flight.general?.cruise_altitude || 'N/A',
-        cruiseSpeed: flight.general?.cruise_tas || 'N/A'
+        planned: flight.navlog?.route || flight.route || 'N/A',
+        alternate: flight.alternate?.icao_code || flight.alternate?.icao || 'N/A',
+        cruiseAltitude: flight.general?.cruise_altitude || flight.cruise_altitude || 'N/A',
+        cruiseSpeed: flight.general?.cruise_tas || flight.cruise_speed || 'N/A'
       },
       times: {
-        departure: flight.times?.sched_out || 'N/A',
-        arrival: flight.times?.sched_in || 'N/A',
-        blockTime: flight.times?.est_block || 'N/A',
-        flightTime: flight.times?.est_time_enroute || 'N/A'
+        departure: flight.times?.sched_out || flight.departure_time || 'N/A',
+        arrival: flight.times?.sched_in || flight.arrival_time || 'N/A',
+        blockTime: flight.times?.est_block || flight.block_time || 'N/A',
+        flightTime: flight.times?.est_time_enroute || flight.flight_time || 'N/A'
       },
       fuel: {
-        planned: parseInt(flight.fuel?.plan_ramp || '0'),
-        alternate: parseInt(flight.fuel?.plan_taxi || '0'),
-        reserve: parseInt(flight.fuel?.plan_alternate || '0'),
-        total: parseInt(flight.fuel?.plan_total || '0')
+        planned: parseInt(flight.fuel?.plan_ramp || flight.fuel?.planned || '0'),
+        alternate: parseInt(flight.fuel?.plan_taxi || flight.fuel?.alternate || '0'),
+        reserve: parseInt(flight.fuel?.plan_alternate || flight.fuel?.reserve || '0'),
+        total: parseInt(flight.fuel?.plan_total || flight.fuel?.total || '0')
       },
       weights: {
-        payload: parseInt(flight.weights?.payload || '0'),
-        fuel: parseInt(flight.weights?.fuel_weight || '0'),
-        total: parseInt(flight.weights?.est_tow || '0'),
-        maxTakeoff: parseInt(flight.weights?.max_tow || '0')
+        payload: parseInt(flight.weights?.payload || flight.payload || '0'),
+        fuel: parseInt(flight.weights?.fuel_weight || flight.fuel_weight || '0'),
+        total: parseInt(flight.weights?.est_tow || flight.est_tow || '0'),
+        maxTakeoff: parseInt(flight.weights?.max_tow || flight.max_tow || '0')
       },
       weather: {
         origin: {
@@ -193,11 +235,11 @@ export class SimBriefAPI {
         }
       },
       loadsheet: {
-        passengers: parseInt(flight.loadsheet?.passengers || '0'),
-        cargo: parseInt(flight.loadsheet?.cargo || '0'),
-        fuel: parseInt(flight.loadsheet?.fuel || '0'),
-        totalWeight: parseInt(flight.loadsheet?.total_weight || '0'),
-        balance: parseFloat(flight.loadsheet?.balance || '0')
+        passengers: parseInt(flight.loadsheet?.passengers || flight.passengers || '0'),
+        cargo: parseInt(flight.loadsheet?.cargo || flight.cargo || '0'),
+        fuel: parseInt(flight.loadsheet?.fuel || flight.fuel || '0'),
+        totalWeight: parseInt(flight.loadsheet?.total_weight || flight.total_weight || '0'),
+        balance: parseFloat(flight.loadsheet?.balance || flight.balance || '0')
       }
     };
   }
