@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { Plane, Lock, User, Eye, EyeOff, Wifi, WifiOff, AlertCircle } from 'lucide-react';
+import { Lock, User, Eye, EyeOff, Wifi, WifiOff, AlertCircle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 export default function LoginPage() {

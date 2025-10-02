@@ -11,7 +11,6 @@ import {
   Fuel, 
   Users, 
   AlertTriangle,
-  Satellite,
   Zap,
   Calendar,
   MapPin,

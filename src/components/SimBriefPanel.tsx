@@ -9,9 +9,7 @@ import {
   Clock, 
   Fuel, 
   Weight, 
-  Cloud, 
   Users, 
-  Package,
   RefreshCw,
   AlertCircle,
   CheckCircle
@@ -126,7 +124,7 @@ export default function SimBriefPanel() {
       setIsLoading(false);
       isFetchingRef.current = false;
     }
-  }, [user?.simbriefId]);
+  }, [user?.simbriefId, hasLoaded]);
 
   useEffect(() => {
     console.log('SimBriefPanel useEffect triggered', { simbriefId: user?.simbriefId, hasLoaded });
@@ -135,7 +133,7 @@ export default function SimBriefPanel() {
       isFetchingRef.current = false; // Reset fetching flag when SimBrief ID changes
       fetchFlightData();
     }
-  }, [user?.simbriefId]); // Remove fetchFlightData from dependencies
+  }, [user?.simbriefId, fetchFlightData, hasLoaded]);
 
   if (!user?.simbriefId) {
     return (
@@ -195,7 +193,7 @@ export default function SimBriefPanel() {
         </div>
         <div className="text-center">
           <Plane className="h-12 w-12 text-gray-500 mx-auto mb-4" />
-          <p className="text-gray-400">No flight data loaded. Click "Load Flight" to fetch from SimBrief.</p>
+            <p className="text-gray-400">No flight data loaded. Click &quot;Load Flight&quot; to fetch from SimBrief.</p>
         </div>
       </div>
     );
@@ -344,22 +342,44 @@ export default function SimBriefPanel() {
           <div className="space-y-4">
             <div className="space-y-3">
               <div className="flex justify-between">
-                <span className="text-xs text-gray-400">Planned</span>
-                <span className="text-white font-semibold">{flightData.fuel.planned.toLocaleString()} kg</span>
+                <span className="text-xs text-gray-400">Taxi</span>
+                <span className="text-white font-semibold">{(flightData.fuel.taxi || 0).toLocaleString()} kg</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-xs text-gray-400">Enroute</span>
+                <span className="text-white font-semibold">{(flightData.fuel.enroute || 0).toLocaleString()} kg</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-xs text-gray-400">Contingency</span>
+                <span className="text-white font-semibold">{(flightData.fuel.contingency || 0).toLocaleString()} kg</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-xs text-gray-400">Alternate</span>
-                <span className="text-white font-semibold">{flightData.fuel.alternate.toLocaleString()} kg</span>
+                <span className="text-white font-semibold">{(flightData.fuel.alternate || 0).toLocaleString()} kg</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-xs text-gray-400">Reserve</span>
-                <span className="text-white font-semibold">{flightData.fuel.reserve.toLocaleString()} kg</span>
+                <span className="text-white font-semibold">{(flightData.fuel.reserve || 0).toLocaleString()} kg</span>
               </div>
+              {(flightData.fuel.etops || 0) > 0 && (
+                <div className="flex justify-between">
+                  <span className="text-xs text-gray-400">ETOPS</span>
+                  <span className="text-white font-semibold">{(flightData.fuel.etops || 0).toLocaleString()} kg</span>
+                </div>
+              )}
             </div>
-            <div className="border-t border-gray-600/50 pt-4">
+            <div className="border-t border-gray-600/50 pt-4 space-y-2">
               <div className="flex justify-between">
-                <span className="text-xs font-semibold text-gray-300 uppercase tracking-wide">Total</span>
-                <span className="text-lg font-bold text-orange-400">{flightData.fuel.total.toLocaleString()} kg</span>
+                <span className="text-xs font-semibold text-gray-300 uppercase tracking-wide">Plan Ramp</span>
+                <span className="text-lg font-bold text-orange-400">{(flightData.fuel.planned || 0).toLocaleString()} kg</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-xs text-gray-400">Plan Landing</span>
+                <span className="text-white font-medium">{(flightData.fuel.planLanding || 0).toLocaleString()} kg</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-xs text-gray-400">Avg Fuel Flow</span>
+                <span className="text-white font-medium">{(flightData.fuel.avgFuelFlow || 0).toLocaleString()} kg/hr</span>
               </div>
             </div>
           </div>
@@ -377,21 +397,21 @@ export default function SimBriefPanel() {
             <div className="space-y-3">
               <div className="flex justify-between">
                 <span className="text-xs text-gray-400">Payload</span>
-                <span className="text-white font-semibold">{flightData.weights.payload.toLocaleString()} kg</span>
+                <span className="text-white font-semibold">{(flightData.weights.payload || 0).toLocaleString()} kg</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-xs text-gray-400">Fuel</span>
-                <span className="text-white font-semibold">{flightData.weights.fuel.toLocaleString()} kg</span>
+                <span className="text-white font-semibold">{(flightData.weights.fuel || 0).toLocaleString()} kg</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-xs text-gray-400">Max TOW</span>
-                <span className="text-white font-semibold">{flightData.weights.maxTakeoff.toLocaleString()} kg</span>
+                <span className="text-white font-semibold">{(flightData.weights.maxTakeoff || 0).toLocaleString()} kg</span>
               </div>
             </div>
             <div className="border-t border-gray-600/50 pt-4">
               <div className="flex justify-between">
                 <span className="text-xs font-semibold text-gray-300 uppercase tracking-wide">Est. TOW</span>
-                <span className="text-lg font-bold text-purple-400">{flightData.weights.total.toLocaleString()} kg</span>
+                <span className="text-lg font-bold text-purple-400">{(flightData.weights.total || 0).toLocaleString()} kg</span>
               </div>
             </div>
           </div>
@@ -409,25 +429,25 @@ export default function SimBriefPanel() {
             <div className="space-y-3">
               <div className="flex justify-between">
                 <span className="text-xs text-gray-400">Passengers</span>
-                <span className="text-white font-semibold">{flightData.loadsheet.passengers}</span>
+                <span className="text-white font-semibold">{flightData.loadsheet.passengers || 0}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-xs text-gray-400">Cargo</span>
-                <span className="text-white font-semibold">{flightData.loadsheet.cargo.toLocaleString()} kg</span>
+                <span className="text-white font-semibold">{(flightData.loadsheet.cargo || 0).toLocaleString()} kg</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-xs text-gray-400">Fuel</span>
-                <span className="text-white font-semibold">{flightData.loadsheet.fuel.toLocaleString()} kg</span>
+                <span className="text-white font-semibold">{(flightData.loadsheet.fuel || 0).toLocaleString()} kg</span>
               </div>
             </div>
             <div className="border-t border-gray-600/50 pt-4 space-y-2">
               <div className="flex justify-between">
                 <span className="text-xs font-semibold text-gray-300 uppercase tracking-wide">Total Weight</span>
-                <span className="text-lg font-bold text-cyan-400">{flightData.loadsheet.totalWeight.toLocaleString()} kg</span>
+                <span className="text-lg font-bold text-cyan-400">{(flightData.loadsheet.totalWeight || 0).toLocaleString()} kg</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-xs text-gray-400">Balance</span>
-                <span className="text-white font-medium">{flightData.loadsheet.balance.toFixed(2)}%</span>
+                <span className="text-white font-medium">{(flightData.loadsheet.balance || 0).toFixed(2)}%</span>
               </div>
             </div>
           </div>

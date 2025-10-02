@@ -44,6 +44,15 @@ export interface SimBriefFlight {
     alternate: number;
     reserve: number;
     total: number;
+    taxi: number;
+    enroute: number;
+    contingency: number;
+    etops: number;
+    minTakeoff: number;
+    planTakeoff: number;
+    planLanding: number;
+    avgFuelFlow: number;
+    maxTanks: number;
   };
   weights: {
     payload: number;
@@ -147,7 +156,7 @@ export class SimBriefAPI {
     }
   }
 
-  private parseFlightData(data: any): SimBriefFlight {
+  private parseFlightData(data: Record<string, unknown>): SimBriefFlight {
     // Handle different response formats
     console.log('Full API response structure:', data); // Debug log
     
@@ -210,9 +219,18 @@ export class SimBriefAPI {
       },
       fuel: {
         planned: parseInt(flight.fuel?.plan_ramp || flight.fuel?.planned || '0'),
-        alternate: parseInt(flight.fuel?.plan_taxi || flight.fuel?.alternate || '0'),
-        reserve: parseInt(flight.fuel?.plan_alternate || flight.fuel?.reserve || '0'),
-        total: parseInt(flight.fuel?.plan_total || flight.fuel?.total || '0')
+        alternate: parseInt(flight.fuel?.alternate_burn || flight.fuel?.alternate || '0'),
+        reserve: parseInt(flight.fuel?.reserve || flight.fuel?.reserve || '0'),
+        total: parseInt(flight.fuel?.plan_ramp || flight.fuel?.total || '0'),
+        taxi: parseInt(flight.fuel?.taxi || '0'),
+        enroute: parseInt(flight.fuel?.enroute_burn || '0'),
+        contingency: parseInt(flight.fuel?.contingency || '0'),
+        etops: parseInt(flight.fuel?.etops || '0'),
+        minTakeoff: parseInt(flight.fuel?.min_takeoff || '0'),
+        planTakeoff: parseInt(flight.fuel?.plan_takeoff || '0'),
+        planLanding: parseInt(flight.fuel?.plan_landing || '0'),
+        avgFuelFlow: parseInt(flight.fuel?.avg_fuel_flow || '0'),
+        maxTanks: parseInt(flight.fuel?.max_tanks || '0')
       },
       weights: {
         payload: parseInt(flight.weights?.payload || flight.payload || '0'),

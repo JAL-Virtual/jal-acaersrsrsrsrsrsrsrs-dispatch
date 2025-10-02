@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useACARS } from '@/hooks/useACARS';
 import { useAuth } from '@/hooks/useAuth';
-import { Send, Clock, User, Plane } from 'lucide-react';
+import { Send, Clock, Plane } from 'lucide-react';
 import { format } from 'date-fns';
 
 export default function MessagePanel() {
@@ -126,7 +126,7 @@ export default function MessagePanel() {
               <select
                 id="type"
                 value={newMessage.type}
-                onChange={(e) => setNewMessage(prev => ({ ...prev, type: e.target.value as any }))}
+                onChange={(e) => setNewMessage(prev => ({ ...prev, type: e.target.value as 'telex' | 'loadsheet' | 'report' }))}
                 className="w-full px-3 py-2 border border-gray-600 rounded-md bg-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
               >
                 <option value="telex">Telex</option>

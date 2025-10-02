@@ -8,7 +8,6 @@ import {
   MessageSquare, 
   Settings, 
   LogOut, 
-  Send, 
   RefreshCw,
   Bell,
   FileText,
@@ -159,7 +158,7 @@ export default function Dashboard() {
               return (
                 <button
                   key={tab.id}
-                  onClick={() => setActiveTab(tab.id as any)}
+                  onClick={() => setActiveTab(tab.id as 'messages' | 'acars' | 'rops' | 'settings' | 'simbrief')}
                   className={`flex items-center space-x-2 py-4 px-6 rounded-t-lg font-medium text-sm transition-all duration-200 relative ${
                     activeTab === tab.id
                       ? 'text-white bg-gray-700/50 backdrop-blur-sm border-t-2 border-red-500'

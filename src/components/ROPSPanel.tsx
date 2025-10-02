@@ -6,7 +6,6 @@ import { useAuth } from '@/hooks/useAuth';
 import { 
   Radio, 
   Send, 
-  Plane, 
   ArrowUp, 
   ArrowDown, 
   Navigation,
@@ -87,7 +86,7 @@ export default function ROPSPanel() {
     // Add request to local state
     const newRequest: ROPSRequest = {
       id: Date.now().toString(),
-      type: featureId as any,
+      type: featureId as 'pdc' | 'cpdlc' | 'oceanic' | 'direct',
       status: 'pending',
       timestamp: new Date(),
       details: requestContent
@@ -109,7 +108,7 @@ export default function ROPSPanel() {
       setRequests(prev => 
         prev.map(req => 
           req.id === newRequest.id 
-            ? { ...req, status: response as any }
+            ? { ...req, status: response as 'pending' | 'approved' | 'rejected' }
             : req
         )
       );
@@ -263,7 +262,7 @@ export default function ROPSPanel() {
       <div className="bg-gray-800 rounded-lg border border-gray-700 p-6">
         <h3 className="text-lg font-semibold text-white mb-4">Random Direct To Instructions</h3>
         <p className="text-sm text-gray-400 mb-4">
-          ROPS can send up to 3 random "Direct To" instructions during a flight
+          ROPS can send up to 3 random &quot;Direct To&quot; instructions during a flight
         </p>
         <div className="flex items-center space-x-4">
           <button

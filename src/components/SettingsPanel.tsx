@@ -7,7 +7,6 @@ import {
   User, 
   Radio, 
   Bell, 
-  Volume2, 
   Moon, 
   Sun,
   Save,
@@ -109,7 +108,7 @@ export default function SettingsPanel() {
     }
   };
 
-  const updateSetting = (key: keyof typeof settings, value: any) => {
+  const updateSetting = (key: keyof typeof settings, value: boolean | string) => {
     setSettings(prev => {
       const newSettings = { ...prev, [key]: value };
       // Auto-save to localStorage when settings change
