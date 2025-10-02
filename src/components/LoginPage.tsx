@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { Plane, Lock, User } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 export default function LoginPage() {
   const [apiKey, setApiKey] = useState('');
@@ -11,6 +12,7 @@ export default function LoginPage() {
   const [connectionStatus, setConnectionStatus] = useState<'checking' | 'online' | 'offline'>('checking');
   const [showAdvanced, setShowAdvanced] = useState(false);
   const { login } = useAuth();
+  const router = useRouter();
 
   // Check connection status on component mount
   useEffect(() => {
@@ -36,8 +38,12 @@ export default function LoginPage() {
     if (!apiKey.trim()) return;
 
     setIsLoading(true);
-    await login(apiKey, customApiUrl);
+    const success = await login(apiKey, customApiUrl);
     setIsLoading(false);
+    
+    if (success) {
+      router.push('/dashboard');
+    }
   };
 
   return (
