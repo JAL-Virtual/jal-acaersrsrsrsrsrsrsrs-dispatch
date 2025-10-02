@@ -4,7 +4,7 @@ import { JALVirtualAPI } from '@/lib/api';
 // POST /api/auth - Authenticate user with API key
 export async function POST(request: NextRequest) {
   try {
-    const { apiKey, externalApiUrl } = await request.json();
+    const { apiKey } = await request.json();
 
     if (!apiKey) {
       return NextResponse.json(
@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Use the JALVirtualAPI to authenticate
-    const jalAPI = new JALVirtualAPI(apiKey, externalApiUrl);
+    const jalAPI = new JALVirtualAPI(apiKey);
     const authResult = await jalAPI.authenticate();
 
     if (authResult.success && authResult.user) {

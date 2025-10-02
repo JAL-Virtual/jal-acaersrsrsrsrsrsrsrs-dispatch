@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useACARS } from '@/hooks/useACARS';
 import { 
@@ -24,6 +24,52 @@ export default function Dashboard() {
   const { user, logout } = useAuth();
   const { messages, refreshMessages, isLoading } = useACARS();
   const [activeTab, setActiveTab] = useState<'messages' | 'acars' | 'rops' | 'settings'>('messages');
+  const [pilotInfo, setPilotInfo] = useState<{name: string, callsign?: string} | null>(null);
+  const [isLoadingPilotInfo, setIsLoadingPilotInfo] = useState(true);
+
+  // Fetch current pilot information from API
+  useEffect(() => {
+    const fetchPilotInfo = async () => {
+      try {
+        const token = localStorage.getItem('jal-acars-token');
+        if (!token) return;
+
+        // Decode the token to get the API key
+        const apiKey = Buffer.from(token, 'base64').toString();
+        
+        const response = await fetch('https://jalvirtual.com/api/user', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'X-API-Key': apiKey,
+          },
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          const pilotData = data.data;
+          setPilotInfo({
+            name: pilotData.name || pilotData.pilot_name || 'Pilot',
+            callsign: pilotData.callsign || pilotData.aircraft_callsign
+          });
+        }
+      } catch (error) {
+        console.error('Failed to fetch pilot info:', error);
+        // Fallback to stored user data
+        if (user) {
+          setPilotInfo({
+            name: user.name,
+            callsign: user.callsign
+          });
+        }
+      } finally {
+        setIsLoadingPilotInfo(false);
+      }
+    };
+
+    fetchPilotInfo();
+  }, [user]);
 
   const tabs = [
     { id: 'messages', label: 'Messages', icon: MessageSquare },
@@ -38,18 +84,37 @@ export default function Dashboard() {
       <header className="bg-gray-800 border-b border-gray-700">
         <div className="px-6 py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <Plane className="h-8 w-8 text-red-500" />
-              <div>
-                <h1 className="text-xl font-bold text-white">JAL ACARS</h1>
-                <p className="text-sm text-gray-400">Dispatch System</p>
+            <div className="flex items-center">
+              <div className="relative">
+                <img 
+                  src="/img/jal-logo.png" 
+                  alt="JAL Logo" 
+                  className="h-10 w-auto object-contain"
+                  onError={(e) => {
+                    // Fallback to airplane icon if image doesn't exist
+                    const img = e.currentTarget;
+                    img.style.display = 'none';
+                    const fallback = img.nextElementSibling as HTMLElement;
+                    if (fallback) {
+                      fallback.style.display = 'block';
+                    }
+                  }}
+                />
+                <Plane className="h-8 w-8 text-red-500 hidden" />
               </div>
             </div>
             
             <div className="flex items-center space-x-4">
               <div className="text-right">
-                <p className="text-sm text-gray-300">Welcome back</p>
-                <p className="font-medium text-white">{user?.name}</p>
+                <p className="text-sm text-gray-300">
+                  {isLoadingPilotInfo ? 'Loading...' : 'JAL Virtual Pilot'}
+                </p>
+                <p className="font-medium text-white">
+                  {isLoadingPilotInfo ? '...' : (pilotInfo?.name || user?.name || 'Pilot')}
+                </p>
+                {pilotInfo?.callsign && pilotInfo.callsign !== 'N/A' && (
+                  <p className="text-xs text-gray-400">{pilotInfo.callsign}</p>
+                )}
               </div>
               <button
                 onClick={logout}

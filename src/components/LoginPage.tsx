@@ -2,15 +2,13 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { Plane, Lock, User, Eye, EyeOff, Settings, Wifi, WifiOff, AlertCircle } from 'lucide-react';
+import { Plane, Lock, User, Eye, EyeOff, Wifi, WifiOff, AlertCircle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 export default function LoginPage() {
   const [apiKey, setApiKey] = useState('');
-  const [customApiUrl, setCustomApiUrl] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<'checking' | 'online' | 'offline'>('checking');
-  const [showAdvanced, setShowAdvanced] = useState(false);
   const [showApiKey, setShowApiKey] = useState(false);
   const { login } = useAuth();
   const router = useRouter();
@@ -19,7 +17,7 @@ export default function LoginPage() {
   useEffect(() => {
     const checkConnection = async () => {
       try {
-        const apiUrl = customApiUrl || 'https://jalvirtual.com/api/user';
+        const apiUrl = 'https://jalvirtual.com/api/user';
         await fetch(apiUrl, {
           method: 'HEAD',
           mode: 'no-cors',
@@ -32,14 +30,14 @@ export default function LoginPage() {
     };
 
     checkConnection();
-  }, [customApiUrl]);
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!apiKey.trim()) return;
 
     setIsLoading(true);
-    const success = await login(apiKey, customApiUrl);
+    const success = await login(apiKey);
     setIsLoading(false);
     
     if (success) {
@@ -79,8 +77,16 @@ export default function LoginPage() {
             <div className="flex items-center justify-center mb-6">
               <div className="relative">
                 <div className="absolute inset-0 bg-red-500/30 rounded-full blur-xl animate-pulse"></div>
-                <div className="relative bg-gradient-to-br from-red-500 to-red-600 p-4 rounded-full shadow-2xl">
-                  <Plane className="h-12 w-12 text-white animate-float" />
+                <div className="relative bg-white/10 backdrop-blur-sm p-6 rounded-2xl shadow-2xl border border-white/20">
+                  {/* JAL Logo */}
+                  <img 
+                    src="/img/jal-logo.png" 
+                    alt="JAL Logo" 
+                    className="h-16 w-auto animate-float object-contain"
+                    style={{ maxWidth: '120px', maxHeight: '64px' }}
+                    onLoad={() => console.log('✅ JAL logo loaded successfully')}
+                    onError={() => console.log('❌ JAL logo failed to load')}
+                  />
                 </div>
               </div>
             </div>
@@ -122,40 +128,6 @@ export default function LoginPage() {
                   >
                     {showApiKey ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                   </button>
-                </div>
-              </div>
-
-              {/* Advanced Settings Toggle */}
-              <div className="flex items-center justify-between pt-2">
-                <button
-                  type="button"
-                  onClick={() => setShowAdvanced(!showAdvanced)}
-                  className="flex items-center text-sm text-gray-300 hover:text-white transition-colors group"
-                >
-                  <Settings className="h-4 w-4 mr-2 group-hover:rotate-90 transition-transform duration-300" />
-                  {showAdvanced ? 'Hide' : 'Show'} Advanced Settings
-                </button>
-              </div>
-
-              {/* Advanced Settings */}
-              <div className={`transition-all duration-500 overflow-hidden ${showAdvanced ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}`}>
-                <div className="space-y-4 p-6 bg-white/5 rounded-xl border border-white/10 backdrop-blur-sm">
-                  <div className="space-y-2">
-                    <label htmlFor="customApiUrl" className="block text-sm font-semibold text-white/90">
-                      Custom API URL (Optional)
-                    </label>
-                    <input
-                      id="customApiUrl"
-                      type="url"
-                      value={customApiUrl}
-                      onChange={(e) => setCustomApiUrl(e.target.value)}
-                      placeholder="https://your-api.com/user"
-                      className="block w-full px-4 py-3 border border-white/20 rounded-lg bg-white/10 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500/50 focus:border-red-500/50 transition-all duration-300 text-sm backdrop-blur-sm"
-                    />
-                    <p className="text-xs text-gray-400">
-                      Leave empty to use default JAL Virtual API
-                    </p>
-                  </div>
                 </div>
               </div>
 

@@ -9,7 +9,7 @@ interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (apiKey: string, externalApiUrl?: string) => Promise<boolean>;
+  login: (apiKey: string) => Promise<boolean>;
   logout: () => void;
   updateUser: (userData: Partial<User>) => void;
 }
@@ -36,7 +36,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsLoading(false);
   }, []);
 
-  const login = async (apiKey: string, externalApiUrl?: string): Promise<boolean> => {
+  const login = async (apiKey: string): Promise<boolean> => {
     setIsLoading(true);
     try {
       const response = await fetch('/api/auth', {
@@ -46,7 +46,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         },
         body: JSON.stringify({
           apiKey,
-          externalApiUrl,
         }),
       });
 
