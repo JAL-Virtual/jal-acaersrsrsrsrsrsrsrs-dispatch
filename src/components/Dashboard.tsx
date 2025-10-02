@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { useAuth } from '@/hooks/useAuth';
 import { useACARS } from '@/hooks/useACARS';
 import { 
@@ -103,9 +104,11 @@ export default function Dashboard() {
               <div className="relative">
                 <div className="absolute inset-0 bg-red-500/20 rounded-xl blur-lg"></div>
                 <div className="relative bg-white/10 backdrop-blur-sm p-3 rounded-xl border border-white/20">
-                  <img
+                  <Image
                     src="/img/jal-logo.png"
                     alt="JAL Logo"
+                    width={32}
+                    height={32}
                     className="h-8 w-auto object-contain"
                     onError={(e) => {
                       const img = e.currentTarget;

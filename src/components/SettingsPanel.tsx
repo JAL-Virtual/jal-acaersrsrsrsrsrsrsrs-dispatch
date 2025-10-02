@@ -108,7 +108,7 @@ export default function SettingsPanel() {
     }
   };
 
-  const updateSetting = (key: keyof typeof settings, value: boolean | string) => {
+  const updateSetting = (key: keyof typeof settings, value: boolean | string | number) => {
     setSettings(prev => {
       const newSettings = { ...prev, [key]: value };
       // Auto-save to localStorage when settings change

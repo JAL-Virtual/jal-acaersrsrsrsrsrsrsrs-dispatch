@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, useMemo, ReactNode } from 'react';
 import { ACARSMessage, HoppieMessage } from '@/types';
 import { HoppieAPI } from '@/lib/api';
 import { useAuth } from './useAuth';
@@ -21,7 +21,9 @@ export function ACARSProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(false);
   const { user } = useAuth();
 
-  const hoppieAPI = user?.hoppieId ? new HoppieAPI(user.hoppieId) : null;
+  const hoppieAPI = useMemo(() => {
+    return user?.hoppieId ? new HoppieAPI(user.hoppieId) : null;
+  }, [user?.hoppieId]);
 
   useEffect(() => {
     if (user?.hoppieId) {
@@ -73,7 +75,7 @@ export function ACARSProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const refreshMessages = async (): Promise<void> => {
+  const refreshMessages = useCallback(async (): Promise<void> => {
     if (!hoppieAPI) return;
 
     setIsLoading(true);
@@ -90,7 +92,7 @@ export function ACARSProvider({ children }: { children: ReactNode }) {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [hoppieAPI]);
 
   const clearMessages = () => {
     setMessages([]);

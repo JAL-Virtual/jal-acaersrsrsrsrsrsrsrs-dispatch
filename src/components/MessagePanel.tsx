@@ -11,7 +11,7 @@ export default function MessagePanel() {
   const { user } = useAuth();
   const [newMessage, setNewMessage] = useState({
     to: '',
-    type: 'telex' as const,
+    type: 'telex' as 'telex' | 'loadsheet' | 'report',
     packet: ''
   });
 

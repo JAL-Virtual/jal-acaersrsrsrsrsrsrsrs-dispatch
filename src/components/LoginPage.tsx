@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { useAuth } from '@/hooks/useAuth';
 import { Lock, User, Eye, EyeOff, Wifi, WifiOff, AlertCircle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -79,9 +80,11 @@ export default function LoginPage() {
                 <div className="absolute inset-0 bg-red-500/30 rounded-full blur-xl animate-pulse"></div>
                 <div className="relative bg-white/10 backdrop-blur-sm p-6 rounded-2xl shadow-2xl border border-white/20">
                   {/* JAL Logo */}
-                  <img 
+                  <Image 
                     src="/img/jal-logo.png" 
                     alt="JAL Logo" 
+                    width={120}
+                    height={64}
                     className="h-16 w-auto animate-float object-contain"
                     style={{ maxWidth: '120px', maxHeight: '64px' }}
                     onLoad={() => console.log('✅ JAL logo loaded successfully')}
