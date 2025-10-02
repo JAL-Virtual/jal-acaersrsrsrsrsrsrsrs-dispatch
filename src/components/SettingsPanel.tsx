@@ -17,8 +17,7 @@ import {
 export default function SettingsPanel() {
   const { user, updateUser } = useAuth();
   const [settings, setSettings] = useState({
-    hoppieId: user?.hoppieId || '',
-    callsign: user?.callsign || '',
+    simbriefId: user?.simbriefId || '',
     autoLoadsheet: true,
     autoReports: true,
     notifications: true,
@@ -50,8 +49,7 @@ export default function SettingsPanel() {
     if (user) {
       setSettings(prev => ({
         ...prev,
-        hoppieId: user.hoppieId || prev.hoppieId,
-        callsign: user.callsign || prev.callsign,
+        simbriefId: user.simbriefId || prev.simbriefId,
       }));
     }
   }, [user]);
@@ -60,10 +58,9 @@ export default function SettingsPanel() {
     setIsSaving(true);
     
     // Update user data
-    if (settings.hoppieId !== user?.hoppieId || settings.callsign !== user?.callsign) {
+    if (settings.simbriefId !== user?.simbriefId) {
       updateUser({
-        hoppieId: settings.hoppieId,
-        callsign: settings.callsign
+        simbriefId: settings.simbriefId
       });
     }
 
@@ -78,8 +75,7 @@ export default function SettingsPanel() {
   const handleReset = () => {
     if (confirm('Are you sure you want to reset all settings to default?')) {
       const defaultSettings = {
-        hoppieId: '',
-        callsign: '',
+        simbriefId: '',
         autoLoadsheet: true,
         autoReports: true,
         notifications: true,
@@ -122,39 +118,21 @@ export default function SettingsPanel() {
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label htmlFor="hoppieId" className="block text-sm font-medium text-gray-300 mb-1">
-              Hoppie ID
+            <label htmlFor="simbriefId" className="block text-sm font-medium text-gray-300 mb-1">
+              SimBrief User ID
             </label>
             <input
-              id="hoppieId"
+              id="simbriefId"
               type="text"
-              value={settings.hoppieId}
-              onChange={(e) => updateSetting('hoppieId', e.target.value)}
-              placeholder="Enter your Hoppie ID"
+              value={settings.simbriefId}
+              onChange={(e) => updateSetting('simbriefId', e.target.value)}
+              placeholder="Enter your SimBrief User ID"
               className="w-full px-3 py-2 border border-gray-600 rounded-md bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
             />
             <p className="text-xs text-gray-400 mt-1">
-              Required for ACARS messaging functionality
+              Required for Loadsheet functions (Preliminary & Final)
             </p>
           </div>
-
-          <div>
-            <label htmlFor="callsign" className="block text-sm font-medium text-gray-300 mb-1">
-              Callsign
-            </label>
-            <input
-              id="callsign"
-              type="text"
-              value={settings.callsign}
-              onChange={(e) => updateSetting('callsign', e.target.value.toUpperCase())}
-              placeholder="Enter your callsign"
-              className="w-full px-3 py-2 border border-gray-600 rounded-md bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
-            />
-            <p className="text-xs text-gray-400 mt-1">
-              Your aircraft callsign for ACARS messages
-            </p>
-          </div>
-
         </div>
       </div>
 
@@ -327,7 +305,7 @@ export default function SettingsPanel() {
           
           <div className="bg-gray-900/50 p-3 rounded">
             <p className="text-xs text-gray-400">
-              <strong>Note:</strong> Make sure your Hoppie ID is correctly configured in both this dispatch system and your flight simulator ACARS system for proper communication.
+              <strong>Note:</strong> Dispatch Hoppie ID and Callsign are configured via environment variables. Pilots need to configure their own Hoppie ID in their flight simulator ACARS system for proper communication.
             </p>
           </div>
         </div>

@@ -9,7 +9,8 @@ const nextConfig: NextConfig = {
     root: process.cwd(),
   },
   env: {
-    NEXT_PUBLIC_HOPPIE_URL: process.env.NEXT_PUBLIC_HOPPIE_URL || 'http://www.hoppie.nl/acars/system/connect.html',
+    HOPPIE_LOGON_CODE: process.env.HOPPIE_LOGON_CODE,
+    DISPATCH_CALLSIGN: process.env.DISPATCH_CALLSIGN,
   },
 };
 

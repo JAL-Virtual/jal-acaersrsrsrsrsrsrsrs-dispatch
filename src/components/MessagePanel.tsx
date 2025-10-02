@@ -2,7 +2,6 @@
 
 import { useState, useMemo, useRef, useEffect } from 'react';
 import { useACARS } from '@/hooks/useACARS';
-import { useAuth } from '@/hooks/useAuth';
 import { 
   Send, 
   Clock, 
@@ -22,7 +21,6 @@ import {
   WifiOff,
   Bell,
   BellOff,
-  MoreVertical,
   User,
   Hash,
   Calendar,
@@ -32,18 +30,17 @@ import { format, isToday, isYesterday, formatDistanceToNow } from 'date-fns';
 import toast from 'react-hot-toast';
 
 interface MessageFilters {
-  type: 'all' | 'telex' | 'loadsheet' | 'report' | 'notification';
-  status: 'all' | 'sent' | 'delivered' | 'failed';
+  type: 'all' | 'telex' | 'pdc';
+  status: 'all' | 'sent' | 'delivered' | 'failed' | 'pending' | 'accepted' | 'rejected';
   priority: 'all' | 'low' | 'normal' | 'high' | 'urgent';
   callsign: string;
 }
 
 export default function MessagePanel() {
-  const { messages, sendMessage, isLoading, refreshMessages, clearMessages } = useACARS();
-  const { user } = useAuth();
+  const { messages, sendMessage, isLoading, refreshMessages, deleteMessage } = useACARS();
   const [newMessage, setNewMessage] = useState({
     to: '',
-    type: 'telex' as 'telex' | 'loadsheet' | 'report',
+    type: 'telex' as const,
     packet: ''
   });
   
@@ -59,7 +56,7 @@ export default function MessagePanel() {
   const [selectedMessage, setSelectedMessage] = useState<string | null>(null);
   const [autoRefresh, setAutoRefresh] = useState(true);
   const [notifications, setNotifications] = useState(true);
-  const [isConnected, setIsConnected] = useState(true);
+  const [isConnected] = useState(true);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -108,7 +105,7 @@ export default function MessagePanel() {
     if (!newMessage.to || !newMessage.packet) return;
 
     const success = await sendMessage({
-      from: user?.callsign || 'JALV',
+      from: process.env.DISPATCH_CALLSIGN || 'JALV',
       to: newMessage.to,
       type: newMessage.type,
       packet: newMessage.packet
@@ -160,14 +157,6 @@ export default function MessagePanel() {
     toast.success('Copied to clipboard');
   };
 
-  const quickTemplates = [
-    { label: 'Position Report', content: 'REQUEST POSITION REPORT' },
-    { label: 'Weather Request', content: 'REQUEST WEATHER' },
-    { label: 'Clearance Request', content: 'REQUEST CLEARANCE' },
-    { label: 'Fuel Status', content: 'FUEL STATUS REPORT' },
-    { label: 'ETA Update', content: 'ETA UPDATE' },
-    { label: 'Emergency', content: 'EMERGENCY - ASSISTANCE REQUIRED' }
-  ];
 
   return (
     <div className="h-full flex flex-col space-y-4">
@@ -250,14 +239,12 @@ export default function MessagePanel() {
                 <label className="block text-sm font-medium text-gray-300 mb-1">Type</label>
                 <select
                   value={filters.type}
-                  onChange={(e) => setFilters(prev => ({ ...prev, type: e.target.value as any }))}
+                  onChange={(e) => setFilters(prev => ({ ...prev, type: e.target.value as 'all' | 'telex' | 'pdc' }))}
                   className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
                 >
                   <option value="all">All Types</option>
                   <option value="telex">Telex</option>
-                  <option value="loadsheet">Loadsheet</option>
-                  <option value="report">Report</option>
-                  <option value="notification">Notification</option>
+                  <option value="pdc">PDC (CPDLC)</option>
                 </select>
               </div>
               
@@ -265,13 +252,16 @@ export default function MessagePanel() {
                 <label className="block text-sm font-medium text-gray-300 mb-1">Status</label>
                 <select
                   value={filters.status}
-                  onChange={(e) => setFilters(prev => ({ ...prev, status: e.target.value as any }))}
+                  onChange={(e) => setFilters(prev => ({ ...prev, status: e.target.value as 'all' | 'sent' | 'delivered' | 'failed' | 'pending' | 'accepted' | 'rejected' }))}
                   className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
                 >
                   <option value="all">All Status</option>
                   <option value="sent">Sent</option>
                   <option value="delivered">Delivered</option>
                   <option value="failed">Failed</option>
+                  <option value="pending">Pending</option>
+                  <option value="accepted">Accepted</option>
+                  <option value="rejected">Rejected</option>
                 </select>
               </div>
               
@@ -279,7 +269,7 @@ export default function MessagePanel() {
                 <label className="block text-sm font-medium text-gray-300 mb-1">Priority</label>
                 <select
                   value={filters.priority}
-                  onChange={(e) => setFilters(prev => ({ ...prev, priority: e.target.value as any }))}
+                  onChange={(e) => setFilters(prev => ({ ...prev, priority: e.target.value as 'all' | 'low' | 'normal' | 'high' | 'urgent' }))}
                   className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
                 >
                   <option value="all">All Priorities</option>
@@ -307,12 +297,12 @@ export default function MessagePanel() {
 
       {/* Main Content */}
       <div className="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-6 min-h-0">
-        {/* Message List */}
+      {/* Message List */}
         <div className="lg:col-span-2 flex flex-col min-h-0">
           <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl border border-gray-700/50 flex-1 flex flex-col">
             <div className="p-4 border-b border-gray-700/50">
               <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold text-white">Message History</h3>
+            <h3 className="text-lg font-semibold text-white">Message History</h3>
                 <div className="flex items-center space-x-2">
                   <button
                     onClick={() => setAutoRefresh(!autoRefresh)}
@@ -338,11 +328,11 @@ export default function MessagePanel() {
                   </button>
                 </div>
               </div>
-            </div>
+          </div>
             
             <div className="flex-1 overflow-y-auto">
               {filteredMessages.length === 0 ? (
-                <div className="p-8 text-center text-gray-400">
+              <div className="p-8 text-center text-gray-400">
                   <Plane className="h-16 w-16 mx-auto mb-4 opacity-50" />
                   <p className="text-lg font-medium">No messages found</p>
                   <p className="text-sm">
@@ -351,8 +341,8 @@ export default function MessagePanel() {
                       : 'Send your first ACARS message to get started'
                     }
                   </p>
-                </div>
-              ) : (
+              </div>
+            ) : (
                 <div className="divide-y divide-gray-700/50">
                   {Object.entries(groupedMessages).map(([date, dateMessages]) => (
                     <div key={date}>
@@ -374,21 +364,21 @@ export default function MessagePanel() {
                         >
                           <div className="flex items-start justify-between mb-3">
                             <div className="flex items-center space-x-3">
-                              <div className="flex items-center space-x-2">
+                      <div className="flex items-center space-x-2">
                                 {getTypeIcon(message.type)}
-                                <span className="text-sm font-medium text-white">{message.from}</span>
-                                <span className="text-gray-400">→</span>
-                                <span className="text-sm font-medium text-white">{message.to}</span>
+                        <span className="text-sm font-medium text-white">{message.from}</span>
+                        <span className="text-gray-400">→</span>
+                        <span className="text-sm font-medium text-white">{message.to}</span>
                               </div>
                               <span className={`px-2 py-1 rounded-full text-xs font-medium border ${getPriorityColor(message.priority)}`}>
-                                {message.priority}
-                              </span>
-                            </div>
+                          {message.priority}
+                        </span>
+                      </div>
                             
                             <div className="flex items-center space-x-2">
                               <div className="flex items-center space-x-1 text-xs text-gray-400">
-                                <Clock className="h-3 w-3" />
-                                <span>{format(message.timestamp, 'HH:mm:ss')}</span>
+                        <Clock className="h-3 w-3" />
+                        <span>{format(message.timestamp, 'HH:mm:ss')}</span>
                               </div>
                               {getStatusIcon(message.status)}
                               <button
@@ -401,12 +391,22 @@ export default function MessagePanel() {
                               >
                                 <Copy className="h-3 w-3 text-gray-400" />
                               </button>
-                            </div>
-                          </div>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  deleteMessage(message.id);
+                                }}
+                                className="opacity-0 group-hover:opacity-100 p-1 hover:bg-red-600/50 rounded transition-all"
+                                title="Delete message"
+                              >
+                                <Trash2 className="h-3 w-3 text-red-400" />
+                              </button>
+                      </div>
+                    </div>
                           
                           <div className="text-sm text-gray-300 font-mono bg-gray-900/50 p-3 rounded-lg border border-gray-700/50 whitespace-pre-wrap break-words">
-                            {message.content}
-                          </div>
+                      {message.content}
+                    </div>
                           
                           {selectedMessage === message.id && (
                             <div className="mt-3 pt-3 border-t border-gray-700/50">
@@ -416,98 +416,76 @@ export default function MessagePanel() {
                               </div>
                             </div>
                           )}
-                        </div>
-                      ))}
+                  </div>
+                ))}
                     </div>
                   ))}
                   <div ref={messagesEndRef} />
-                </div>
-              )}
-            </div>
+              </div>
+            )}
           </div>
         </div>
+      </div>
 
-        {/* Send Message Panel */}
+      {/* Send Message Panel */}
         <div className="lg:col-span-1 flex flex-col min-h-0">
           <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl border border-gray-700/50 flex-1 flex flex-col">
             <div className="p-4 border-b border-gray-700/50">
-              <h3 className="text-lg font-semibold text-white">Send Message</h3>
-            </div>
+            <h3 className="text-lg font-semibold text-white">Send Message</h3>
+          </div>
             
             <form onSubmit={handleSendMessage} className="p-4 space-y-4 flex-1 flex flex-col">
               <div className="space-y-4 flex-1">
-                <div>
-                  <label htmlFor="to" className="block text-sm font-medium text-gray-300 mb-1">
-                    To (Callsign)
-                  </label>
-                  <input
-                    id="to"
-                    type="text"
-                    value={newMessage.to}
-                    onChange={(e) => setNewMessage(prev => ({ ...prev, to: e.target.value.toUpperCase() }))}
-                    placeholder="e.g., JAL123"
-                    className="w-full px-3 py-2 border border-gray-600 rounded-md bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                    required
-                  />
-                </div>
+            <div>
+              <label htmlFor="to" className="block text-sm font-medium text-gray-300 mb-1">
+                To (Callsign)
+              </label>
+              <input
+                id="to"
+                type="text"
+                value={newMessage.to}
+                onChange={(e) => setNewMessage(prev => ({ ...prev, to: e.target.value.toUpperCase() }))}
+                    placeholder=""
+                className="w-full px-3 py-2 border border-gray-600 rounded-md bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                required
+              />
+            </div>
 
-                <div>
-                  <label htmlFor="type" className="block text-sm font-medium text-gray-300 mb-1">
-                    Message Type
-                  </label>
-                  <select
-                    id="type"
-                    value={newMessage.type}
-                    onChange={(e) => setNewMessage(prev => ({ ...prev, type: e.target.value as 'telex' | 'loadsheet' | 'report' }))}
-                    className="w-full px-3 py-2 border border-gray-600 rounded-md bg-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                  >
-                    <option value="telex">Telex</option>
-                    <option value="loadsheet">Loadsheet</option>
-                    <option value="report">Report</option>
-                  </select>
-                </div>
-
-                <div className="flex-1">
-                  <label htmlFor="packet" className="block text-sm font-medium text-gray-300 mb-1">
-                    Message Content
-                  </label>
-                  <textarea
-                    id="packet"
-                    value={newMessage.packet}
-                    onChange={(e) => setNewMessage(prev => ({ ...prev, packet: e.target.value }))}
-                    placeholder="Enter your message..."
-                    rows={6}
-                    className="w-full px-3 py-2 border border-gray-600 rounded-md bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent font-mono text-sm resize-none"
-                    required
-                  />
-                </div>
-              </div>
-
-              <button
-                type="submit"
-                disabled={isLoading || !newMessage.to || !newMessage.packet}
-                className="w-full flex items-center justify-center space-x-2 py-3 px-4 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transform hover:scale-105 disabled:transform-none"
-              >
-                <Send className="h-4 w-4" />
-                <span className="font-medium">{isLoading ? 'Sending...' : 'Send Message'}</span>
-              </button>
-            </form>
-
-            {/* Quick Actions */}
-            <div className="p-4 border-t border-gray-700/50">
-              <h4 className="text-sm font-medium text-gray-300 mb-3">Quick Templates</h4>
-              <div className="grid grid-cols-1 gap-2">
-                {quickTemplates.map((template, index) => (
-                  <button
-                    key={index}
-                    onClick={() => setNewMessage(prev => ({ ...prev, packet: template.content }))}
-                    className="w-full text-left px-3 py-2 text-sm text-gray-400 hover:text-white hover:bg-gray-700/50 rounded-lg transition-colors border border-gray-600/30 hover:border-gray-500/50"
-                  >
-                    {template.label}
-                  </button>
-                ))}
+            <div>
+              <label htmlFor="type" className="block text-sm font-medium text-gray-300 mb-1">
+                Message Type
+              </label>
+              <div className="w-full px-3 py-2 border border-gray-600 rounded-md bg-gray-700 text-white">
+                Telex
               </div>
             </div>
+
+                <div className="flex-1">
+              <label htmlFor="packet" className="block text-sm font-medium text-gray-300 mb-1">
+                Message Content
+              </label>
+              <textarea
+                id="packet"
+                value={newMessage.packet}
+                onChange={(e) => setNewMessage(prev => ({ ...prev, packet: e.target.value }))}
+                placeholder="Enter your message..."
+                    rows={6}
+                    className="w-full px-3 py-2 border border-gray-600 rounded-md bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent font-mono text-sm resize-none"
+                required
+              />
+                </div>
+            </div>
+
+            <button
+              type="submit"
+              disabled={isLoading || !newMessage.to || !newMessage.packet}
+                className="w-full flex items-center justify-center space-x-2 py-3 px-4 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transform hover:scale-105 disabled:transform-none"
+            >
+              <Send className="h-4 w-4" />
+                <span className="font-medium">{isLoading ? 'Sending...' : 'Send Message'}</span>
+            </button>
+          </form>
+
           </div>
         </div>
       </div>

@@ -5,6 +5,7 @@ export interface User {
   email: string;
   callsign: string;
   hoppieId?: string;
+  simbriefId?: string;
   role: 'pilot' | 'dispatch' | 'admin';
 }
 
@@ -21,9 +22,9 @@ export interface ACARSMessage {
   timestamp: Date;
   from: string;
   to: string;
-  type: 'telex' | 'loadsheet' | 'report' | 'notification';
+  type: 'telex' | 'loadsheet' | 'report' | 'notification' | 'pdc';
   content: string;
-  status: 'sent' | 'delivered' | 'failed';
+  status: 'sent' | 'delivered' | 'failed' | 'pending' | 'accepted' | 'rejected';
   priority: 'low' | 'normal' | 'high' | 'urgent';
 }
 
@@ -31,7 +32,7 @@ export interface HoppieMessage {
   logon: string;
   from: string;
   to: string;
-  type: 'telex' | 'loadsheet' | 'report';
+  type: 'telex' | 'loadsheet' | 'report' | 'pdc';
   packet: string;
 }
 

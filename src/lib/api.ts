@@ -2,7 +2,7 @@ import axios from 'axios';
 import { User, AuthResponse, APIResponse, ACARSMessage, HoppieMessage } from '@/types';
 
 const API_BASE_URL = 'https://jalvirtual.com/api/user';
-const HOPPIE_URL = process.env.NEXT_PUBLIC_HOPPIE_URL || 'http://www.hoppie.nl/acars/system/connect.html';
+const HOPPIE_URL = 'http://www.hoppie.nl/acars/system/connect.html';
 
 // Add timeout configuration
 const axiosConfig = {
@@ -65,8 +65,9 @@ export class JALVirtualAPI {
           id: userData.id || userData.pilot_id || 'unknown',
           name: userData.name || userData.pilot_name || 'Pilot',
           email: userData.email || '',
-          callsign: userData.callsign || userData.aircraft_callsign || 'N/A',
+          callsign: userData.callsign || userData.aircraft_callsign || 'JAL Dispatch',
           hoppieId: userData.hoppie_id || '',
+          simbriefId: userData.simbrief_id || '',
           role: 'pilot' as const
         },
         token: this.apiKey // Use the API key as the token
@@ -126,7 +127,7 @@ export class JALVirtualAPI {
         id: userData.id || userData.pilot_id || 'unknown',
         name: userData.name || userData.pilot_name || 'Pilot',
         email: userData.email || '',
-        callsign: userData.callsign || userData.aircraft_callsign || 'N/A',
+        callsign: userData.callsign || userData.aircraft_callsign || 'JAL Dispatch',
         hoppieId: userData.hoppie_id || '',
         role: 'pilot' as const
       };
@@ -148,6 +149,7 @@ export class HoppieAPI {
 
   async sendMessage(message: HoppieMessage): Promise<APIResponse> {
     try {
+      // Use the correct Hoppie API format
       const url = `${HOPPIE_URL}?logon=${this.logonCode}&from=${this.dispatchCallsign}&to=${message.to}&type=${message.type}&packet=${encodeURIComponent(message.packet)}`;
       
       const response = await axios.get(url, axiosConfig);
@@ -160,12 +162,12 @@ export class HoppieAPI {
       } else {
         return {
           success: false,
-          error: 'Failed to send message'
+          error: response.data || 'Failed to send message'
         };
       }
     } catch (error: unknown) {
       console.error('Hoppie send message error:', error);
-      const err = error as { code?: string; message?: string };
+      const err = error as { code?: string; message?: string; response?: { data?: string } };
       
       if (err.code === 'ECONNABORTED') {
         return {
@@ -181,7 +183,7 @@ export class HoppieAPI {
       
       return {
         success: false,
-        error: err.message || 'Network error'
+        error: err.response?.data || err.message || 'Network error'
       };
     }
   }
@@ -203,7 +205,7 @@ export class HoppieAPI {
             messages.push({
               id: Date.now().toString(),
               timestamp: new Date(),
-              from: parts[0],
+              from: parts[0] === 'N/A' ? 'JALDispatch' : parts[0],
               to: parts[1],
               type: 'telex',
               content: parts.slice(3).join(':'),

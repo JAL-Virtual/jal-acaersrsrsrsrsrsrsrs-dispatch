@@ -3,29 +3,33 @@
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { useAuth } from '@/hooks/useAuth';
-import { useACARS } from '@/hooks/useACARS';
 import { 
   Plane, 
   MessageSquare, 
   Settings, 
   LogOut, 
-  RefreshCw,
-  Bell,
+  Clock,
   FileText,
-  Users,
-  MapPin,
 } from 'lucide-react';
 import MessagePanel from './MessagePanel';
 import ACARSFeatures from './ACARSFeatures';
 import SettingsPanel from './SettingsPanel';
-import AircraftPanel from './AircraftPanel';
 
 export default function Dashboard() {
   const { user, logout } = useAuth();
-  const { messages, refreshMessages, isLoading } = useACARS();
-  const [activeTab, setActiveTab] = useState<'messages' | 'acars' | 'aircraft' | 'settings'>('messages');
+  const [activeTab, setActiveTab] = useState<'messages' | 'acars' | 'settings'>('messages');
   const [pilotInfo, setPilotInfo] = useState<{name: string, callsign?: string} | null>(null);
   const [isLoadingPilotInfo, setIsLoadingPilotInfo] = useState(true);
+  const [zuluTime, setZuluTime] = useState(new Date());
+
+  // Update Zulu time every second
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setZuluTime(new Date());
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, []);
 
   // Fetch current pilot information from API
   useEffect(() => {
@@ -87,7 +91,6 @@ export default function Dashboard() {
   const tabs = [
     { id: 'messages', label: 'Messages', icon: MessageSquare },
     { id: 'acars', label: 'ACARS', icon: FileText },
-    { id: 'aircraft', label: 'Aircraft', icon: Plane },
     { id: 'settings', label: 'Settings', icon: Settings },
   ];
 
@@ -120,12 +123,21 @@ export default function Dashboard() {
                 </div>
               </div>
               <div>
-                <h1 className="text-xl font-bold text-white">JAL ACARS</h1>
-                <p className="text-sm text-gray-400">Dispatch System</p>
+                <h1 className="text-xl font-bold text-white">ACARS Dispatch</h1>
+                <p className="text-sm text-gray-400">Aircraft Communication Addressing and Reporting System</p>
               </div>
             </div>
 
             <div className="flex items-center space-x-6">
+              <div className="flex items-center space-x-2 px-3 py-2 bg-blue-900/20 border border-blue-500/30 rounded-lg">
+                <Clock className="h-4 w-4 text-blue-400" />
+                <div>
+                  <p className="text-xs text-blue-400 font-medium">ZULU TIME</p>
+                  <p className="text-sm text-white font-mono">
+                    {zuluTime.toISOString().substr(11, 8)}
+                  </p>
+                </div>
+              </div>
               <div className="text-right">
                 <p className="text-sm text-gray-300">
                   {isLoadingPilotInfo ? 'Loading...' : 'Welcome Back'}
@@ -133,7 +145,7 @@ export default function Dashboard() {
                 <p className="font-medium text-white">
                   {isLoadingPilotInfo ? '...' : (pilotInfo?.name || user?.name || 'Pilot')}
                 </p>
-                {pilotInfo?.callsign && pilotInfo.callsign !== 'N/A' && (
+                {pilotInfo?.callsign && pilotInfo.callsign !== 'JAL Dispatch' && (
                   <p className="text-xs text-gray-400">{pilotInfo.callsign}</p>
                 )}
               </div>
@@ -158,7 +170,7 @@ export default function Dashboard() {
               return (
                 <button
                   key={tab.id}
-                  onClick={() => setActiveTab(tab.id as 'messages' | 'acars' | 'aircraft' | 'settings')}
+                  onClick={() => setActiveTab(tab.id as 'messages' | 'acars' | 'settings')}
                   className={`flex items-center space-x-2 py-4 px-6 rounded-t-lg font-medium text-sm transition-all duration-200 relative ${
                     activeTab === tab.id
                       ? 'text-white bg-gray-700/50 backdrop-blur-sm border-t-2 border-red-500'
@@ -208,13 +220,6 @@ export default function Dashboard() {
 
 
 
-          {activeTab === 'aircraft' && (
-            <div className="h-full p-6">
-              <div className="h-full max-w-7xl mx-auto">
-                <AircraftPanel />
-              </div>
-            </div>
-          )}
 
           {activeTab === 'settings' && (
             <div className="p-6">
@@ -230,28 +235,6 @@ export default function Dashboard() {
         </div>
       </main>
 
-      {/* Footer */}
-      <footer className="bg-gray-800/60 backdrop-blur-xl border-t border-gray-700/50 px-6 py-4">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex items-center justify-between text-sm text-gray-400">
-            <div className="flex items-center space-x-6">
-              <div className="flex items-center space-x-2">
-                <span className="text-gray-500">Dispatch Callsign:</span>
-                <span className="text-white font-mono">JALV</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <span className="text-gray-500">Hoppie ID:</span>
-                <span className="text-white font-mono">{user?.hoppieId || 'Not configured'}</span>
-              </div>
-            </div>
-            <div className="flex items-center space-x-2">
-              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-              <MapPin className="h-4 w-4" />
-              <span>Connected to ACARS Network</span>
-            </div>
-          </div>
-        </div>
-      </footer>
     </div>
   );
 }

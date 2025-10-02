@@ -3,30 +3,30 @@ export interface SimBriefFlightPlan {
   general: {
     icao_airline: string;
     flight_number: string;
-    callsign: string;
-    origin: {
+  callsign: string;
+  origin: {
       icao_code: string;
       iata_code: string;
-      name: string;
-    };
-    destination: {
+    name: string;
+  };
+  destination: {
       icao_code: string;
       iata_code: string;
-      name: string;
-    };
-    aircraft: {
-      icao: string;
-      name: string;
-      registration: string;
-    };
-    fuel: {
+    name: string;
+  };
+  aircraft: {
+    icao: string;
+    name: string;
+    registration: string;
+  };
+  fuel: {
       plan_ramp: number;
       plan_takeoff: number;
       plan_landing: number;
       plan_remains: number;
       units: string;
-    };
-    weights: {
+  };
+  weights: {
       cargo: number;
       est_tow: number;
       est_zfw: number;
@@ -83,10 +83,41 @@ export interface SimBriefRequest {
 
 export class SimBriefAPI {
   private baseUrl = 'https://www.simbrief.com/api/xml.fetcher.php';
-  private apiKey: string;
+  private userId: string;
 
-  constructor(apiKey: string) {
-    this.apiKey = apiKey;
+  constructor(userId: string) {
+    this.userId = userId;
+  }
+
+  // Fetch the latest flight plan for the user
+  async fetchLatestFlightPlan(): Promise<SimBriefFlightPlan> {
+    try {
+      const params = new URLSearchParams({
+        userid: this.userId,
+        json: '1'
+      });
+
+      const response = await fetch(`${this.baseUrl}?${params}`, {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json',
+          'User-Agent': 'JAL-ACARS/1.0'
+        }
+      });
+
+        if (!response.ok) {
+        throw new Error(`SimBrief API error: ${response.status} ${response.statusText}`);
+        }
+
+        const data = await response.json();
+      console.log('Raw SimBrief API response:', data);
+      const parsedData = this.parseFlightPlan(data);
+      console.log('Parsed SimBrief data:', parsedData);
+      return parsedData;
+    } catch (error) {
+      console.error('SimBrief API error:', error);
+      throw new Error(`Failed to fetch flight plan: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
   }
 
   async generateFlightPlan(request: SimBriefRequest): Promise<SimBriefFlightPlan> {
@@ -121,64 +152,76 @@ export class SimBriefAPI {
     }
   }
 
-  private parseFlightPlan(data: any): SimBriefFlightPlan {
+  private parseFlightPlan(data: Record<string, unknown>): SimBriefFlightPlan {
+    const general = data.general as Record<string, unknown> || {};
+    const origin = data.origin as Record<string, unknown> || {};
+    const destination = data.destination as Record<string, unknown> || {};
+    const aircraft = data.aircraft as Record<string, unknown> || {};
+    const fuel = data.fuel as Record<string, unknown> || {};
+    const weights = data.weights as Record<string, unknown> || {};
+    const times = data.times as Record<string, unknown> || {};
+    const crew = data.crew as Record<string, unknown> || {};
+    const loadsheet = data.loadsheet as Record<string, unknown> || {};
+    const passengers = loadsheet.passengers as Record<string, unknown> || {};
+    const fuelData = loadsheet.fuel as Record<string, unknown> || {};
+    
     return {
       general: {
-        icao_airline: data.general?.icao_airline || '',
-        flight_number: data.general?.flight_number || '',
-        callsign: data.general?.callsign || '',
-        origin: {
-          icao_code: data.origin?.icao_code || '',
-          iata_code: data.origin?.iata_code || '',
-          name: data.origin?.name || ''
-        },
-        destination: {
-          icao_code: data.destination?.icao_code || '',
-          iata_code: data.destination?.iata_code || '',
-          name: data.destination?.name || ''
-        },
-        aircraft: {
-          icao: data.aircraft?.icao || '',
-          name: data.aircraft?.name || '',
-          registration: data.aircraft?.registration || ''
-        },
-        fuel: {
-          plan_ramp: parseFloat(data.fuel?.plan_ramp) || 0,
-          plan_takeoff: parseFloat(data.fuel?.plan_takeoff) || 0,
-          plan_landing: parseFloat(data.fuel?.plan_landing) || 0,
-          plan_remains: parseFloat(data.fuel?.plan_remains) || 0,
-          units: data.fuel?.units || 'lbs'
-        },
-        weights: {
-          cargo: parseFloat(data.weights?.cargo) || 0,
-          est_tow: parseFloat(data.weights?.est_tow) || 0,
-          est_zfw: parseFloat(data.weights?.est_zfw) || 0,
-          max_tow: parseFloat(data.weights?.max_tow) || 0,
-          max_zfw: parseFloat(data.weights?.max_zfw) || 0,
-          max_cargo: parseFloat(data.weights?.max_cargo) || 0,
-          passenger_count: parseInt(data.weights?.passenger_count) || 0,
-          passenger_weight: parseFloat(data.weights?.passenger_weight) || 0,
-          units: data.weights?.units || 'lbs'
+        icao_airline: (general.icao_airline as string) || '',
+        flight_number: (general.flight_number as string) || '',
+        callsign: (general.callsign as string) || '',
+      origin: {
+          icao_code: (origin.icao_code as string) || '',
+          iata_code: (origin.iata_code as string) || '',
+          name: (origin.name as string) || ''
+      },
+      destination: {
+          icao_code: (destination.icao_code as string) || '',
+          iata_code: (destination.iata_code as string) || '',
+          name: (destination.name as string) || ''
+      },
+      aircraft: {
+          icao: (aircraft.icao as string) || '',
+          name: (aircraft.name as string) || '',
+          registration: (aircraft.registration as string) || ''
+      },
+      fuel: {
+          plan_ramp: parseFloat(fuel.plan_ramp as string) || 0,
+          plan_takeoff: parseFloat(fuel.plan_takeoff as string) || 0,
+          plan_landing: parseFloat(fuel.plan_landing as string) || 0,
+          plan_remains: parseFloat(fuel.plan_remains as string) || 0,
+          units: (fuel.units as string) || 'lbs'
+      },
+      weights: {
+          cargo: parseFloat(weights.cargo as string) || 0,
+          est_tow: parseFloat(weights.est_tow as string) || 0,
+          est_zfw: parseFloat(weights.est_zfw as string) || 0,
+          max_tow: parseFloat(weights.max_tow as string) || 0,
+          max_zfw: parseFloat(weights.max_zfw as string) || 0,
+          max_cargo: parseFloat(weights.max_cargo as string) || 0,
+          passenger_count: parseInt(weights.passenger_count as string) || 0,
+          passenger_weight: parseFloat(weights.passenger_weight as string) || 0,
+          units: (weights.units as string) || 'lbs'
         },
         times: {
-          est_departure: data.times?.est_departure || '',
-          est_arrival: data.times?.est_arrival || '',
-          est_duration: data.times?.est_duration || ''
+          est_departure: (times.est_departure as string) || '',
+          est_arrival: (times.est_arrival as string) || '',
+          est_duration: (times.est_duration as string) || ''
         }
       },
       crew: {
-        captain: data.crew?.captain || '',
-        first_officer: data.crew?.first_officer || ''
+        captain: (crew.captain as string) || '',
+        first_officer: (crew.first_officer as string) || ''
       },
       loadsheet: {
-        cargo: data.loadsheet?.cargo || [],
+        cargo: (loadsheet.cargo as Array<{ name: string; weight: number; position: string }>) || [],
         passengers: {
-          total: parseInt(data.loadsheet?.passengers?.total) || 0,
-          distribution: data.loadsheet?.passengers?.distribution || []
+          total: parseInt(passengers.total as string) || 0,
+          distribution: (passengers.distribution as Array<{ class: string; count: number; weight: number }>) || []
         },
         fuel: {
-          total: parseFloat(data.loadsheet?.fuel?.total) || 0,
-          distribution: data.loadsheet?.fuel?.distribution || []
+          total: parseFloat(fuelData.total as string) || 0,
+          distribution: (fuelData.distribution as Array<{ tank: string; weight: number }>) || []
         }
       }
     };
