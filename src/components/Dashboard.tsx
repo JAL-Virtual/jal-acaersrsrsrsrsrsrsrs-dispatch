@@ -37,17 +37,15 @@ export default function Dashboard() {
           return;
         }
 
-        // Decode the token to get the API key
-        const apiKey = Buffer.from(token, 'base64').toString();
-        console.log('Using API key:', apiKey.substring(0, 8) + '...');
-        
-        const response = await fetch('https://jalvirtual.com/api/user', {
-          method: 'GET',
+        // Use our own API route to avoid CORS issues
+        const response = await fetch('/api/auth/verify', {
+          method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Accept': 'application/json',
-            'X-API-Key': apiKey,
           },
+          body: JSON.stringify({
+            apiKey: Buffer.from(token, 'base64').toString()
+          }),
         });
 
         console.log('Response status:', response.status);
@@ -55,13 +53,14 @@ export default function Dashboard() {
 
         if (response.ok) {
           const data = await response.json();
-          console.log('API Response:', data); // Debug log
-          const pilotData = data.data;
-          console.log('Pilot Data:', pilotData); // Debug log
-          setPilotInfo({
-            name: pilotData.name || pilotData.pilot_name || 'Pilot',
-            callsign: pilotData.callsign || pilotData.aircraft_callsign
-          });
+          console.log('API Response:', data);
+          
+          if (data.ok && data.user) {
+            setPilotInfo({
+              name: data.user.name || 'Pilot',
+              callsign: data.user.callsign
+            });
+          }
         } else {
           console.log('API call failed with status:', response.status);
           const errorText = await response.text();

@@ -5,6 +5,7 @@ export interface User {
   email: string;
   callsign: string;
   hoppieId?: string;
+  simbriefId?: string;
   role: 'pilot' | 'dispatch' | 'admin';
 }
 

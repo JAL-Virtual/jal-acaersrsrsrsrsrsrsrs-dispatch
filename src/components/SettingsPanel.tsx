@@ -20,6 +20,7 @@ export default function SettingsPanel() {
   const [settings, setSettings] = useState({
     hoppieId: user?.hoppieId || '',
     callsign: user?.callsign || '',
+    simbriefId: user?.simbriefId || '',
     autoLoadsheet: true,
     autoReports: true,
     notifications: true,
@@ -38,10 +39,11 @@ export default function SettingsPanel() {
     setIsSaving(true);
     
     // Update user data
-    if (settings.hoppieId !== user?.hoppieId || settings.callsign !== user?.callsign) {
+    if (settings.hoppieId !== user?.hoppieId || settings.callsign !== user?.callsign || settings.simbriefId !== user?.simbriefId) {
       updateUser({
         hoppieId: settings.hoppieId,
-        callsign: settings.callsign
+        callsign: settings.callsign,
+        simbriefId: settings.simbriefId
       });
     }
 
@@ -59,6 +61,7 @@ export default function SettingsPanel() {
       const defaultSettings = {
         hoppieId: '',
         callsign: '',
+        simbriefId: '',
         autoLoadsheet: true,
         autoReports: true,
         notifications: true,
@@ -127,6 +130,23 @@ export default function SettingsPanel() {
             />
             <p className="text-xs text-gray-400 mt-1">
               Your aircraft callsign for ACARS messages
+            </p>
+          </div>
+
+          <div>
+            <label htmlFor="simbriefId" className="block text-sm font-medium text-gray-300 mb-1">
+              SimBrief ID
+            </label>
+            <input
+              id="simbriefId"
+              type="text"
+              value={settings.simbriefId}
+              onChange={(e) => updateSetting('simbriefId', e.target.value)}
+              placeholder="Enter your SimBrief ID"
+              className="w-full px-3 py-2 border border-gray-600 rounded-md bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+            />
+            <p className="text-xs text-gray-400 mt-1">
+              Your SimBrief username for flight planning integration
             </p>
           </div>
         </div>
