@@ -10,47 +10,18 @@ EXTERNAL_API_URL=https://jalvirtual.com/api/user
 EXTERNAL_API_TIMEOUT=10000
 EXTERNAL_API_RETRY_ATTEMPTS=3
 EXTERNAL_API_RETRY_DELAY=1000
-
-# JAL Virtual API Configuration (legacy)
-JAL_VIRTUAL_API_URL=https://jalvirtual.com/api/user
-HOPPIE_API_URL=http://www.hoppie.nl/acars/system/connect.html
-
-# API Settings
-API_TIMEOUT=10000
-API_RETRY_ATTEMPTS=3
-API_RETRY_DELAY=1000
-
-# CORS Settings
-ALLOWED_ORIGINS=*
-
-# Feature Flags
-ACARS_ENABLED=true
-ROPS_ENABLED=true
-MESSAGING_ENABLED=true
-
-# Application Settings
-NEXT_PUBLIC_APP_VERSION=1.0.0
-NEXT_PUBLIC_APP_NAME=JAL ACARS
 ```
 
 ## API Endpoints
 
 ### Authentication
-- `POST /api/auth` - Standard authentication using JAL Virtual API
-- `POST /api/auth/external` - External API authentication with custom URL support
-
-### User Management
-- `GET /api/user` - Get user data (requires Authorization header)
-
-### System
-- `GET /api/config` - Get API configuration
-- `GET /api/health` - Health check endpoint
+- `POST /api/auth` - Single login endpoint that supports external API authentication
 
 ## Usage
 
-### Using Custom API URL
+### Login with External API
 
-You can specify a custom API URL when logging in by including it in the request body:
+The single `/api/auth` endpoint handles all login functionality. You can specify a custom API URL when logging in:
 
 ```javascript
 const response = await fetch('/api/auth', {
@@ -65,6 +36,8 @@ const response = await fetch('/api/auth', {
   }),
 });
 ```
+
+If no `externalApiUrl` is provided, it will use the default URL from environment variables.
 
 ### API Response Format
 
