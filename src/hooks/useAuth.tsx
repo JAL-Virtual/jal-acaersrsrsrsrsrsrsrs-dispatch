@@ -2,14 +2,13 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { User } from '@/types';
-import { JALVirtualAPI } from '@/lib/api';
 import toast from 'react-hot-toast';
 
 interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (apiKey: string) => Promise<boolean>;
+  login: (pilotId: string, apiKey: string) => Promise<boolean>;
   logout: () => void;
   updateUser: (userData: Partial<User>) => void;
 }
@@ -36,20 +35,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsLoading(false);
   }, []);
 
-  const login = async (apiKey: string): Promise<boolean> => {
+  const login = async (pilotId: string, apiKey: string): Promise<boolean> => {
     setIsLoading(true);
     try {
-      const jalAPI = new JALVirtualAPI(apiKey);
-      const authResponse = await jalAPI.authenticate();
-      
-      if (authResponse.success && authResponse.user && authResponse.token) {
-        setUser(authResponse.user);
-        localStorage.setItem('jal-acars-user', JSON.stringify(authResponse.user));
-        localStorage.setItem('jal-acars-token', authResponse.token);
-        toast.success(`Welcome back, ${authResponse.user.name}!`);
+      const response = await fetch('/api/auth', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          pilotId,
+          apiKey,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success && data.user && data.token) {
+        setUser(data.user);
+        localStorage.setItem('jal-acars-user', JSON.stringify(data.user));
+        localStorage.setItem('jal-acars-token', data.token);
+        toast.success(data.message || `Welcome back, ${data.user.name}!`);
         return true;
       } else {
-        toast.error(authResponse.message || 'Login failed');
+        toast.error(data.message || 'Login failed');
         return false;
       }
     } catch (error: unknown) {

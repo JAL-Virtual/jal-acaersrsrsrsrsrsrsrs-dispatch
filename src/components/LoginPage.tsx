@@ -5,6 +5,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { Plane, Lock, User } from 'lucide-react';
 
 export default function LoginPage() {
+  const [pilotId, setPilotId] = useState('');
   const [apiKey, setApiKey] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<'checking' | 'online' | 'offline'>('checking');
@@ -30,10 +31,10 @@ export default function LoginPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!apiKey.trim()) return;
+    if (!pilotId.trim() || !apiKey.trim()) return;
 
     setIsLoading(true);
-    await login(apiKey);
+    await login(pilotId, apiKey);
     setIsLoading(false);
   };
 
@@ -52,6 +53,26 @@ export default function LoginPage() {
         {/* Login Form */}
         <div className="bg-gray-800 rounded-lg shadow-xl p-8">
           <form onSubmit={handleSubmit} className="space-y-6">
+            <div>
+              <label htmlFor="pilotId" className="block text-sm font-medium text-gray-300 mb-2">
+                Pilot ID / Callsign
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <User className="h-5 w-5 text-gray-400" />
+                </div>
+                <input
+                  id="pilotId"
+                  type="text"
+                  value={pilotId}
+                  onChange={(e) => setPilotId(e.target.value.toUpperCase())}
+                  placeholder="Enter your pilot ID or callsign"
+                  className="block w-full pl-10 pr-3 py-3 border border-gray-600 rounded-md bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                  required
+                />
+              </div>
+            </div>
+
             <div>
               <label htmlFor="apiKey" className="block text-sm font-medium text-gray-300 mb-2">
                 JAL Virtual Pilot API Key
@@ -74,7 +95,7 @@ export default function LoginPage() {
 
             <button
               type="submit"
-              disabled={isLoading || !apiKey.trim()}
+              disabled={isLoading || !pilotId.trim() || !apiKey.trim()}
               className="w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               {isLoading ? (
@@ -127,6 +148,7 @@ export default function LoginPage() {
           <div className="mt-6 p-4 bg-gray-700 rounded-md">
             <h3 className="text-sm font-medium text-gray-300 mb-2">Getting Started:</h3>
             <ul className="text-xs text-gray-400 space-y-1">
+              <li>• Enter your JAL Virtual pilot ID or callsign</li>
               <li>• Obtain your pilot API key from JAL Virtual Airlines</li>
               <li>• Log in to your JAL Virtual account to generate API key</li>
               <li>• Configure your Hoppie ID in settings after login</li>
