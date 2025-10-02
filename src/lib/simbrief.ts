@@ -3,6 +3,117 @@ import { APIResponse } from '@/types';
 // SimBrief API Configuration
 const SIMBRIEF_API_BASE = 'https://www.simbrief.com/api/xml.fetcher.php';
 
+// SimBrief API Response Types
+interface SimBriefAPIResponse {
+  [key: string]: unknown;
+  callsign?: string;
+  flight_number?: string;
+  origin?: {
+    icao_code?: string;
+    icao?: string;
+    iata_code?: string;
+    iata?: string;
+    name?: string;
+    city?: string;
+    country?: string;
+  };
+  destination?: {
+    icao_code?: string;
+    icao?: string;
+    iata_code?: string;
+    iata?: string;
+    name?: string;
+    city?: string;
+    country?: string;
+  };
+  aircraft?: {
+    icao_code?: string;
+    icao?: string;
+    name?: string;
+    registration?: string;
+  };
+  atc?: {
+    callsign?: string;
+  };
+  navlog?: {
+    route?: string;
+  };
+  route?: string;
+  alternate?: {
+    icao_code?: string;
+    icao?: string;
+  };
+  general?: {
+    cruise_altitude?: string;
+    cruise_tas?: string;
+  };
+  cruise_altitude?: string;
+  cruise_speed?: string;
+  times?: {
+    sched_out?: string;
+    sched_in?: string;
+    est_block?: string;
+    est_time_enroute?: string;
+  };
+  departure_time?: string;
+  arrival_time?: string;
+  block_time?: string;
+  flight_time?: string;
+  fuel?: {
+    plan_ramp?: string;
+    planned?: string;
+    alternate_burn?: string;
+    alternate?: string;
+    reserve?: string;
+    total?: string;
+    taxi?: string;
+    enroute_burn?: string;
+    contingency?: string;
+    etops?: string;
+    min_takeoff?: string;
+    plan_takeoff?: string;
+    plan_landing?: string;
+    avg_fuel_flow?: string;
+    max_tanks?: string;
+  };
+  weights?: {
+    payload?: string;
+    fuel_weight?: string;
+    est_tow?: string;
+    max_tow?: string;
+  };
+  payload?: string;
+  fuel_weight?: string;
+  est_tow?: string;
+  max_tow?: string;
+  weather?: {
+    origin?: {
+      wind?: string;
+      visibility?: string;
+      temperature?: string;
+      pressure?: string;
+    };
+    destination?: {
+      wind?: string;
+      visibility?: string;
+      temperature?: string;
+      pressure?: string;
+    };
+  };
+  loadsheet?: {
+    passengers?: string;
+    cargo?: string;
+    fuel?: string;
+    total_weight?: string;
+    balance?: string;
+  };
+  passengers?: string;
+  cargo?: string;
+  total_weight?: string;
+  balance?: string;
+  id?: string;
+}
+
 // SimBrief Flight Data Types
 export interface SimBriefFlight {
   id: string;
@@ -161,12 +272,12 @@ export class SimBriefAPI {
     console.log('Full API response structure:', data); // Debug log
     
     // Try different possible structures
-    let flight = data.fetch || data;
+    let flight: SimBriefAPIResponse = (data.fetch as SimBriefAPIResponse) || (data as SimBriefAPIResponse);
     
     // If data.fetch doesn't exist, try the data itself
     if (!flight || Object.keys(flight).length < 5) {
       console.log('Trying data directly...'); // Debug log
-      flight = data;
+      flight = data as SimBriefAPIResponse;
     }
     
     console.log('Raw flight data:', flight); // Debug log
@@ -255,7 +366,7 @@ export class SimBriefAPI {
       loadsheet: {
         passengers: parseInt(flight.loadsheet?.passengers || flight.passengers || '0'),
         cargo: parseInt(flight.loadsheet?.cargo || flight.cargo || '0'),
-        fuel: parseInt(flight.loadsheet?.fuel || flight.fuel || '0'),
+        fuel: parseInt(typeof flight.loadsheet?.fuel === 'string' ? flight.loadsheet.fuel : typeof flight.fuel === 'string' ? flight.fuel : '0'),
         totalWeight: parseInt(flight.loadsheet?.total_weight || flight.total_weight || '0'),
         balance: parseFloat(flight.loadsheet?.balance || flight.balance || '0')
       }

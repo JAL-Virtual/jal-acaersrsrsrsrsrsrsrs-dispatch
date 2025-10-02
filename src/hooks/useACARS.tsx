@@ -25,15 +25,6 @@ export function ACARSProvider({ children }: { children: ReactNode }) {
     return user?.hoppieId ? new HoppieAPI(user.hoppieId) : null;
   }, [user?.hoppieId]);
 
-  useEffect(() => {
-    if (user?.hoppieId) {
-      refreshMessages();
-      // Set up periodic message refresh
-      const interval = setInterval(refreshMessages, 30000); // Every 30 seconds
-      return () => clearInterval(interval);
-    }
-  }, [user?.hoppieId, refreshMessages]);
-
   const sendMessage = async (message: Omit<HoppieMessage, 'logon'>): Promise<boolean> => {
     if (!hoppieAPI) {
       toast.error('Hoppie ID not configured');
@@ -93,6 +84,15 @@ export function ACARSProvider({ children }: { children: ReactNode }) {
       setIsLoading(false);
     }
   }, [hoppieAPI]);
+
+  useEffect(() => {
+    if (user?.hoppieId) {
+      refreshMessages();
+      // Set up periodic message refresh
+      const interval = setInterval(refreshMessages, 30000); // Every 30 seconds
+      return () => clearInterval(interval);
+    }
+  }, [user?.hoppieId, refreshMessages]);
 
   const clearMessages = () => {
     setMessages([]);
