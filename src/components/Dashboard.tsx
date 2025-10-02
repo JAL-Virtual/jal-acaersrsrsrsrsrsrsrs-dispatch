@@ -14,20 +14,18 @@ import {
   FileText,
   Users,
   MapPin,
-  PlaneTakeoff,
-  Monitor
+  PlaneTakeoff
 } from 'lucide-react';
 import MessagePanel from './MessagePanel';
 import ACARSFeatures from './ACARSFeatures';
 import ROPSPanel from './ROPSPanel';
 import SettingsPanel from './SettingsPanel';
 import SimBriefPanel from './SimBriefPanel';
-import CockpitDisplay from './CockpitDisplay';
 
 export default function Dashboard() {
   const { user, logout } = useAuth();
   const { messages, refreshMessages, isLoading } = useACARS();
-  const [activeTab, setActiveTab] = useState<'messages' | 'acars' | 'rops' | 'settings' | 'simbrief' | 'cockpit'>('messages');
+  const [activeTab, setActiveTab] = useState<'messages' | 'acars' | 'rops' | 'settings' | 'simbrief'>('messages');
   const [pilotInfo, setPilotInfo] = useState<{name: string, callsign?: string} | null>(null);
   const [isLoadingPilotInfo, setIsLoadingPilotInfo] = useState(true);
 
@@ -92,7 +90,6 @@ export default function Dashboard() {
     { id: 'messages', label: 'Messages', icon: MessageSquare },
     { id: 'acars', label: 'ACARS', icon: FileText },
     { id: 'simbrief', label: 'SimBrief', icon: PlaneTakeoff },
-    { id: 'cockpit', label: 'Cockpit', icon: Monitor },
     { id: 'rops', label: 'ROPS ATC', icon: Users },
     { id: 'settings', label: 'Settings', icon: Settings },
   ];
@@ -209,10 +206,6 @@ export default function Dashboard() {
             <h2 className="text-2xl font-bold text-white mb-6">SimBrief Flight Data</h2>
             <SimBriefPanel />
           </div>
-        )}
-
-        {activeTab === 'cockpit' && (
-          <CockpitDisplay />
         )}
 
         {activeTab === 'rops' && (

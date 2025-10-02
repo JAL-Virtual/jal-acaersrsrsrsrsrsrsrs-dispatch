@@ -84,7 +84,7 @@ export class SimBriefAPI {
 
   async fetchFlightData(): Promise<APIResponse<SimBriefFlight>> {
     try {
-      const url = `${SIMBRIEF_API_BASE}?username=${encodeURIComponent(this.username)}&json=1`;
+      const url = `${SIMBRIEF_API_BASE}?userid=${encodeURIComponent(this.username)}&json=v2`;
       
       const response = await fetch(url, {
         method: 'GET',
@@ -102,7 +102,7 @@ export class SimBriefAPI {
 
       const data = await response.json();
       
-      if (data.fetch.status === 'Success') {
+      if (data.fetch && data.fetch.status === 'Success') {
         const flight = this.parseFlightData(data);
         return {
           success: true,
@@ -112,7 +112,7 @@ export class SimBriefAPI {
       } else {
         return {
           success: false,
-          error: data.fetch.status || 'Failed to fetch flight data'
+          error: data.fetch?.status || 'Failed to fetch flight data'
         };
       }
     } catch (error: unknown) {
