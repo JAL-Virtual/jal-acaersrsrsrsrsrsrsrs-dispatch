@@ -48,7 +48,9 @@ export default function Dashboard() {
 
         if (response.ok) {
           const data = await response.json();
+          console.log('API Response:', data); // Debug log
           const pilotData = data.data;
+          console.log('Pilot Data:', pilotData); // Debug log
           setPilotInfo({
             name: pilotData.name || pilotData.pilot_name || 'Pilot',
             callsign: pilotData.callsign || pilotData.aircraft_callsign
