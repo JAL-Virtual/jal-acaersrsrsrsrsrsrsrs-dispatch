@@ -52,8 +52,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         toast.error(authResponse.message || 'Login failed');
         return false;
       }
-    } catch (error) {
-      toast.error('Authentication error');
+    } catch (error: any) {
+      console.error('Login error:', error);
+      
+      // Handle specific error types
+      if (error.message?.includes('timeout')) {
+        toast.error('Connection timeout. Please check your internet connection.');
+      } else if (error.message?.includes('Network Error') || error.message?.includes('ECONNREFUSED')) {
+        toast.error('Unable to connect to JAL Virtual servers. Please check your internet connection or VPN settings.');
+      } else {
+        toast.error('Authentication error. Please try again.');
+      }
+      
       return false;
     } finally {
       setIsLoading(false);

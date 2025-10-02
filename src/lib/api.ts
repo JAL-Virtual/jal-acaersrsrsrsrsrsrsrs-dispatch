@@ -1,8 +1,34 @@
 import axios from 'axios';
 import { User, AuthResponse, APIResponse, ACARSMessage, HoppieMessage } from '@/types';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_JAL_API_URL || 'https://jalvirtual.com/api/user';
+const API_BASE_URL = 'https://jalvirtual.com/api/user';
 const HOPPIE_URL = process.env.NEXT_PUBLIC_HOPPIE_URL || 'http://www.hoppie.nl/acars/system/connect.html';
+
+// Add timeout configuration
+const axiosConfig = {
+  timeout: 10000, // 10 seconds timeout
+  headers: {
+    'Content-Type': 'application/json',
+  }
+};
+
+// Retry configuration
+const RETRY_ATTEMPTS = 3;
+const RETRY_DELAY = 1000; // 1 second
+
+// Retry utility function
+const retryRequest = async (requestFn: () => Promise<any>, attempts: number = RETRY_ATTEMPTS): Promise<any> => {
+  try {
+    return await requestFn();
+  } catch (error: any) {
+    if (attempts > 1 && (error.code === 'ECONNABORTED' || error.code === 'ENOTFOUND' || error.code === 'ECONNREFUSED')) {
+      console.log(`Retrying request, ${attempts - 1} attempts remaining...`);
+      await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
+      return retryRequest(requestFn, attempts - 1);
+    }
+    throw error;
+  }
+};
 
 // JAL Virtual API Client
 export class JALVirtualAPI {
@@ -14,29 +40,89 @@ export class JALVirtualAPI {
 
   async authenticate(): Promise<AuthResponse> {
     try {
-      const response = await axios.post(`${API_BASE_URL}/auth`, {
-        apiKey: this.apiKey
-      });
+      // Use the API key as Authorization header for JAL Virtual API
+      const response = await retryRequest(() => 
+        axios.get(API_BASE_URL, {
+          ...axiosConfig,
+          headers: {
+            ...axiosConfig.headers,
+            'Authorization': `Bearer ${this.apiKey}`,
+          }
+        })
+      );
+      
+      // Assuming the API returns user data directly
+      const userData = response.data;
       
       return {
         success: true,
-        user: response.data.user,
-        token: response.data.token
+        user: {
+          id: userData.id || userData.pilot_id || 'unknown',
+          name: userData.name || userData.pilot_name || 'Pilot',
+          email: userData.email || '',
+          callsign: userData.callsign || userData.aircraft_callsign || 'N/A',
+          hoppieId: userData.hoppie_id || '',
+          role: 'pilot' as const
+        },
+        token: this.apiKey // Use the API key as the token
       };
-    } catch (error) {
+    } catch (error: any) {
+      console.error('Authentication error:', error);
+      
+      // Enhanced error handling
+      if (error.code === 'ECONNABORTED') {
+        return {
+          success: false,
+          message: 'Connection timeout. Please check your internet connection.'
+        };
+      } else if (error.code === 'ENOTFOUND' || error.code === 'ECONNREFUSED') {
+        return {
+          success: false,
+          message: 'Unable to connect to JAL Virtual servers. Please check your internet connection or VPN settings.'
+        };
+      } else if (error.response?.status === 401) {
+        return {
+          success: false,
+          message: 'Invalid API key. Please check your credentials.'
+        };
+      } else if (error.response?.status === 403) {
+        return {
+          success: false,
+          message: 'Access denied. Please contact JAL Virtual support.'
+        };
+      } else if (error.response?.status >= 500) {
+        return {
+          success: false,
+          message: 'JAL Virtual servers are temporarily unavailable. Please try again later.'
+        };
+      }
+      
       return {
         success: false,
-        message: 'Authentication failed'
+        message: error.response?.data?.message || error.message || 'Authentication failed. Please check your connection and try again.'
       };
     }
   }
 
   async getUserInfo(token: string): Promise<User | null> {
     try {
-      const response = await axios.get(`${API_BASE_URL}/user`, {
-        headers: { Authorization: `Bearer ${token}` }
+      const response = await axios.get(API_BASE_URL, {
+        ...axiosConfig,
+        headers: { 
+          ...axiosConfig.headers,
+          'Authorization': `Bearer ${token}`,
+        }
       });
-      return response.data;
+      
+      const userData = response.data;
+      return {
+        id: userData.id || userData.pilot_id || 'unknown',
+        name: userData.name || userData.pilot_name || 'Pilot',
+        email: userData.email || '',
+        callsign: userData.callsign || userData.aircraft_callsign || 'N/A',
+        hoppieId: userData.hoppie_id || '',
+        role: 'pilot' as const
+      };
     } catch (error) {
       return null;
     }
@@ -57,7 +143,7 @@ export class HoppieAPI {
     try {
       const url = `${HOPPIE_URL}?logon=${this.logonCode}&from=${this.dispatchCallsign}&to=${message.to}&type=${message.type}&packet=${encodeURIComponent(message.packet)}`;
       
-      const response = await axios.get(url);
+      const response = await axios.get(url, axiosConfig);
       
       if (response.data.includes('ok')) {
         return {
@@ -70,10 +156,24 @@ export class HoppieAPI {
           error: 'Failed to send message'
         };
       }
-    } catch (error) {
+    } catch (error: any) {
+      console.error('Hoppie send message error:', error);
+      
+      if (error.code === 'ECONNABORTED') {
+        return {
+          success: false,
+          error: 'Connection timeout. Please check your internet connection.'
+        };
+      } else if (error.code === 'ENOTFOUND' || error.code === 'ECONNREFUSED') {
+        return {
+          success: false,
+          error: 'Unable to connect to Hoppie ACARS network. Please check your internet connection or VPN settings.'
+        };
+      }
+      
       return {
         success: false,
-        error: 'Network error'
+        error: error.message || 'Network error'
       };
     }
   }
@@ -82,7 +182,7 @@ export class HoppieAPI {
     try {
       const url = `${HOPPIE_URL}?logon=${this.logonCode}&from=${this.dispatchCallsign}&to=${this.dispatchCallsign}&type=telex&packet=read`;
       
-      const response = await axios.get(url);
+      const response = await axios.get(url, axiosConfig);
       
       // Parse Hoppie response format
       const messages: ACARSMessage[] = [];
@@ -107,7 +207,15 @@ export class HoppieAPI {
       }
       
       return messages;
-    } catch (error) {
+    } catch (error: any) {
+      console.error('Hoppie receive messages error:', error);
+      
+      if (error.code === 'ECONNABORTED') {
+        console.warn('Connection timeout while receiving messages');
+      } else if (error.code === 'ENOTFOUND' || error.code === 'ECONNREFUSED') {
+        console.warn('Unable to connect to Hoppie ACARS network');
+      }
+      
       return [];
     }
   }

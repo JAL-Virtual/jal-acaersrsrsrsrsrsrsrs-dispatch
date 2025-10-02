@@ -1,13 +1,32 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { Plane, Lock, User } from 'lucide-react';
 
 export default function LoginPage() {
   const [apiKey, setApiKey] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [connectionStatus, setConnectionStatus] = useState<'checking' | 'online' | 'offline'>('checking');
   const { login } = useAuth();
+
+  // Check connection status on component mount
+  useEffect(() => {
+    const checkConnection = async () => {
+      try {
+        const response = await fetch('https://jalvirtual.com/api/user', {
+          method: 'HEAD',
+          mode: 'no-cors',
+          cache: 'no-cache'
+        });
+        setConnectionStatus('online');
+      } catch (error) {
+        setConnectionStatus('offline');
+      }
+    };
+
+    checkConnection();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,7 +54,7 @@ export default function LoginPage() {
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
               <label htmlFor="apiKey" className="block text-sm font-medium text-gray-300 mb-2">
-                JAL Virtual API Key
+                JAL Virtual Pilot API Key
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -46,7 +65,7 @@ export default function LoginPage() {
                   type="password"
                   value={apiKey}
                   onChange={(e) => setApiKey(e.target.value)}
-                  placeholder="Enter your API key"
+                  placeholder="Enter your pilot API key"
                   className="block w-full pl-10 pr-3 py-3 border border-gray-600 rounded-md bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
                   required
                 />
@@ -72,11 +91,44 @@ export default function LoginPage() {
             </button>
           </form>
 
+          {/* Connection Status */}
+          <div className="mt-6 p-3 rounded-md bg-gray-700">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-gray-300">Connection Status:</span>
+              <div className="flex items-center">
+                {connectionStatus === 'checking' && (
+                  <>
+                    <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-yellow-500 mr-2"></div>
+                    <span className="text-xs text-yellow-400">Checking...</span>
+                  </>
+                )}
+                {connectionStatus === 'online' && (
+                  <>
+                    <div className="h-2 w-2 bg-green-500 rounded-full mr-2"></div>
+                    <span className="text-xs text-green-400">Online</span>
+                  </>
+                )}
+                {connectionStatus === 'offline' && (
+                  <>
+                    <div className="h-2 w-2 bg-red-500 rounded-full mr-2"></div>
+                    <span className="text-xs text-red-400">Offline</span>
+                  </>
+                )}
+              </div>
+            </div>
+            {connectionStatus === 'offline' && (
+              <p className="text-xs text-red-400 mt-1">
+                Unable to connect to JAL Virtual servers. Please check your internet connection or VPN settings.
+              </p>
+            )}
+          </div>
+
           {/* Instructions */}
-          <div className="mt-8 p-4 bg-gray-700 rounded-md">
+          <div className="mt-6 p-4 bg-gray-700 rounded-md">
             <h3 className="text-sm font-medium text-gray-300 mb-2">Getting Started:</h3>
             <ul className="text-xs text-gray-400 space-y-1">
-              <li>• Obtain your API key from JAL Virtual</li>
+              <li>• Obtain your pilot API key from JAL Virtual Airlines</li>
+              <li>• Log in to your JAL Virtual account to generate API key</li>
               <li>• Configure your Hoppie ID in settings after login</li>
               <li>• Connect to ACARS network for messaging</li>
             </ul>

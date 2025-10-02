@@ -5,11 +5,11 @@ const nextConfig: NextConfig = {
   images: {
     unoptimized: true,
   },
-  experimental: {
-    appDir: true,
+  turbopack: {
+    root: process.cwd(),
   },
   env: {
-    CUSTOM_KEY: process.env.CUSTOM_KEY,
+    NEXT_PUBLIC_HOPPIE_URL: process.env.NEXT_PUBLIC_HOPPIE_URL || 'http://www.hoppie.nl/acars/system/connect.html',
   },
 };
 
