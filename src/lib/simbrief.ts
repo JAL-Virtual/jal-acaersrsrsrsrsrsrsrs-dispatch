@@ -101,15 +101,18 @@ export class SimBriefAPI {
       }
 
       const data = await response.json();
+      console.log('SimBrief API Response:', data); // Debug log
       
       if (data.fetch && data.fetch.status === 'Success') {
         const flight = this.parseFlightData(data);
+        console.log('Parsed Flight Data:', flight); // Debug log
         return {
           success: true,
           data: flight,
           message: 'Flight data retrieved successfully'
         };
       } else {
+        console.log('SimBrief API Error:', data.fetch?.status || 'Unknown error'); // Debug log
         return {
           success: false,
           error: data.fetch?.status || 'Failed to fetch flight data'
