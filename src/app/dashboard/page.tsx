@@ -1,18 +1,19 @@
 'use client';
 
 import { AuthProvider } from '@/hooks/useAuth';
-import LoginPage from '@/components/LoginPage';
+import { ACARSProvider } from '@/hooks/useACARS';
+import Dashboard from '@/components/Dashboard';
 import { useAuth } from '@/hooks/useAuth';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 
-function AppContent() {
+function DashboardContent() {
   const { isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    if (!isLoading && isAuthenticated) {
-      router.push('/dashboard');
+    if (!isLoading && !isAuthenticated) {
+      router.push('/');
     }
   }, [isAuthenticated, isLoading, router]);
 
@@ -27,17 +28,19 @@ function AppContent() {
     );
   }
 
-  if (isAuthenticated) {
-    return null; // Will redirect to dashboard
+  if (!isAuthenticated) {
+    return null; // Will redirect
   }
 
-  return <LoginPage />;
+  return <Dashboard />;
 }
 
-export default function Home() {
+export default function DashboardPage() {
   return (
     <AuthProvider>
-      <AppContent />
+      <ACARSProvider>
+        <DashboardContent />
+      </ACARSProvider>
     </AuthProvider>
   );
 }
