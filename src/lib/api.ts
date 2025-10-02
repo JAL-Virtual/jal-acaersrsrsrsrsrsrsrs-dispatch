@@ -125,7 +125,7 @@ export class JALVirtualAPI {
         hoppieId: userData.hoppie_id || '',
         role: 'pilot' as const
       };
-    } catch (error) {
+    } catch {
       return null;
     }
   }
