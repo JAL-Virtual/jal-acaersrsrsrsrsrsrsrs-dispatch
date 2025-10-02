@@ -17,11 +17,12 @@ const RETRY_ATTEMPTS = 3;
 const RETRY_DELAY = 1000; // 1 second
 
 // Retry utility function
-const retryRequest = async (requestFn: () => Promise<any>, attempts: number = RETRY_ATTEMPTS): Promise<any> => {
+const retryRequest = async <T>(requestFn: () => Promise<T>, attempts: number = RETRY_ATTEMPTS): Promise<T> => {
   try {
     return await requestFn();
-  } catch (error: any) {
-    if (attempts > 1 && (error.code === 'ECONNABORTED' || error.code === 'ENOTFOUND' || error.code === 'ECONNREFUSED')) {
+  } catch (error: unknown) {
+    const err = error as { code?: string };
+    if (attempts > 1 && (err.code === 'ECONNABORTED' || err.code === 'ENOTFOUND' || err.code === 'ECONNREFUSED')) {
       console.log(`Retrying request, ${attempts - 1} attempts remaining...`);
       await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
       return retryRequest(requestFn, attempts - 1);
@@ -66,31 +67,32 @@ export class JALVirtualAPI {
         },
         token: this.apiKey // Use the API key as the token
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Authentication error:', error);
+      const err = error as { code?: string; response?: { status?: number; data?: { message?: string } }; message?: string };
       
       // Enhanced error handling
-      if (error.code === 'ECONNABORTED') {
+      if (err.code === 'ECONNABORTED') {
         return {
           success: false,
           message: 'Connection timeout. Please check your internet connection.'
         };
-      } else if (error.code === 'ENOTFOUND' || error.code === 'ECONNREFUSED') {
+      } else if (err.code === 'ENOTFOUND' || err.code === 'ECONNREFUSED') {
         return {
           success: false,
           message: 'Unable to connect to JAL Virtual servers. Please check your internet connection or VPN settings.'
         };
-      } else if (error.response?.status === 401) {
+      } else if (err.response?.status === 401) {
         return {
           success: false,
           message: 'Invalid API key. Please check your credentials.'
         };
-      } else if (error.response?.status === 403) {
+      } else if (err.response?.status === 403) {
         return {
           success: false,
           message: 'Access denied. Please contact JAL Virtual support.'
         };
-      } else if (error.response?.status >= 500) {
+      } else if (err.response?.status && err.response.status >= 500) {
         return {
           success: false,
           message: 'JAL Virtual servers are temporarily unavailable. Please try again later.'
@@ -99,7 +101,7 @@ export class JALVirtualAPI {
       
       return {
         success: false,
-        message: error.response?.data?.message || error.message || 'Authentication failed. Please check your connection and try again.'
+        message: err.response?.data?.message || err.message || 'Authentication failed. Please check your connection and try again.'
       };
     }
   }
@@ -156,15 +158,16 @@ export class HoppieAPI {
           error: 'Failed to send message'
         };
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Hoppie send message error:', error);
+      const err = error as { code?: string; message?: string };
       
-      if (error.code === 'ECONNABORTED') {
+      if (err.code === 'ECONNABORTED') {
         return {
           success: false,
           error: 'Connection timeout. Please check your internet connection.'
         };
-      } else if (error.code === 'ENOTFOUND' || error.code === 'ECONNREFUSED') {
+      } else if (err.code === 'ENOTFOUND' || err.code === 'ECONNREFUSED') {
         return {
           success: false,
           error: 'Unable to connect to Hoppie ACARS network. Please check your internet connection or VPN settings.'
@@ -173,7 +176,7 @@ export class HoppieAPI {
       
       return {
         success: false,
-        error: error.message || 'Network error'
+        error: err.message || 'Network error'
       };
     }
   }
@@ -207,12 +210,13 @@ export class HoppieAPI {
       }
       
       return messages;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Hoppie receive messages error:', error);
+      const err = error as { code?: string };
       
-      if (error.code === 'ECONNABORTED') {
+      if (err.code === 'ECONNABORTED') {
         console.warn('Connection timeout while receiving messages');
-      } else if (error.code === 'ENOTFOUND' || error.code === 'ECONNREFUSED') {
+      } else if (err.code === 'ENOTFOUND' || err.code === 'ECONNREFUSED') {
         console.warn('Unable to connect to Hoppie ACARS network');
       }
       

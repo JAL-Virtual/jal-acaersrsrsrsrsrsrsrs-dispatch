@@ -14,13 +14,13 @@ export default function LoginPage() {
   useEffect(() => {
     const checkConnection = async () => {
       try {
-        const response = await fetch('https://jalvirtual.com/api/user', {
+        await fetch('https://jalvirtual.com/api/user', {
           method: 'HEAD',
           mode: 'no-cors',
           cache: 'no-cache'
         });
         setConnectionStatus('online');
-      } catch (error) {
+      } catch {
         setConnectionStatus('offline');
       }
     };

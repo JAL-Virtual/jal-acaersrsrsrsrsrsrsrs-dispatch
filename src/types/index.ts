@@ -60,7 +60,7 @@ export interface Loadsheet {
 }
 
 // API Response Types
-export interface APIResponse<T = any> {
+export interface APIResponse<T = unknown> {
   success: boolean;
   data?: T;
   error?: string;
