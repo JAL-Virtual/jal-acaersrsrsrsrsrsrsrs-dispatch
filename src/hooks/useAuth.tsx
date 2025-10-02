@@ -35,7 +35,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsLoading(false);
   }, []);
 
-  const login = async (pilotId: string, apiKey: string): Promise<boolean> => {
+  const login = async (pilotId: string, apiKey: string, externalApiUrl?: string): Promise<boolean> => {
     setIsLoading(true);
     try {
       const response = await fetch('/api/auth', {
@@ -46,6 +46,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         body: JSON.stringify({
           pilotId,
           apiKey,
+          externalApiUrl,
         }),
       });
 
@@ -69,7 +70,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (err.message?.includes('timeout')) {
         toast.error('Connection timeout. Please check your internet connection.');
       } else if (err.message?.includes('Network Error') || err.message?.includes('ECONNREFUSED')) {
-        toast.error('Unable to connect to JAL Virtual servers. Please check your internet connection or VPN settings.');
+        toast.error('Unable to connect to external API servers. Please check your internet connection or API URL.');
       } else {
         toast.error('Authentication error. Please try again.');
       }
