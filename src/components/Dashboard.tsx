@@ -32,10 +32,14 @@ export default function Dashboard() {
     const fetchPilotInfo = async () => {
       try {
         const token = localStorage.getItem('jal-acars-token');
-        if (!token) return;
+        if (!token) {
+          console.log('No token found');
+          return;
+        }
 
         // Decode the token to get the API key
         const apiKey = Buffer.from(token, 'base64').toString();
+        console.log('Using API key:', apiKey.substring(0, 8) + '...');
         
         const response = await fetch('https://jalvirtual.com/api/user', {
           method: 'GET',
@@ -46,6 +50,9 @@ export default function Dashboard() {
           },
         });
 
+        console.log('Response status:', response.status);
+        console.log('Response ok:', response.ok);
+
         if (response.ok) {
           const data = await response.json();
           console.log('API Response:', data); // Debug log
@@ -55,11 +62,16 @@ export default function Dashboard() {
             name: pilotData.name || pilotData.pilot_name || 'Pilot',
             callsign: pilotData.callsign || pilotData.aircraft_callsign
           });
+        } else {
+          console.log('API call failed with status:', response.status);
+          const errorText = await response.text();
+          console.log('Error response:', errorText);
         }
       } catch (error) {
         console.error('Failed to fetch pilot info:', error);
         // Fallback to stored user data
         if (user) {
+          console.log('Using fallback user data:', user);
           setPilotInfo({
             name: user.name,
             callsign: user.callsign
