@@ -22,7 +22,7 @@ interface ACARSFeature {
   id: string;
   name: string;
   description: string;
-  icon: React.ComponentType<any>;
+  icon: React.ComponentType<{ className?: string }>;
   enabled: boolean;
   category: 'loadsheet' | 'report' | 'notification' | 'weather' | 'special';
 }

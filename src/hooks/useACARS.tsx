@@ -30,7 +30,7 @@ export function ACARSProvider({ children }: { children: ReactNode }) {
       const interval = setInterval(refreshMessages, 30000); // Every 30 seconds
       return () => clearInterval(interval);
     }
-  }, [user?.hoppieId]);
+  }, [user?.hoppieId, refreshMessages]);
 
   const sendMessage = async (message: Omit<HoppieMessage, 'logon'>): Promise<boolean> => {
     if (!hoppieAPI) {
@@ -65,7 +65,7 @@ export function ACARSProvider({ children }: { children: ReactNode }) {
         toast.error(response.error || 'Failed to send message');
         return false;
       }
-    } catch (error) {
+    } catch {
       toast.error('Error sending message');
       return false;
     } finally {
